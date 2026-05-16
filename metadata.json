@@ -1,0 +1,5 @@
+{
+  "name": "Portal Skor",
+  "description": "Aplikasi tebak skor bola dengan fitur pendaftaran user, input skor, dan penarikan hadiah.",
+  "requestFramePermissions": []
+}
