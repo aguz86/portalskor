@@ -30,7 +30,15 @@ export default function Login({ webName }: { webName: string }) {
             data: { username }
           }
         });
-        if (signUpError) throw signUpError;
+
+        // Supabase often throws error if Email Confirmation is enabled but SMTP is not configured or rate limited.
+        if (signUpError) {
+          if (signUpError.message?.toLowerCase().includes('confirmation email')) {
+             throw new Error('Gagal mengirim email konfirmasi. Silakan buka Dashboard Supabase Anda -> Authentication -> Providers -> Email, kemudian MATIKAN opsi "Confirm email".');
+          }
+          throw signUpError;
+        }
+
         if (!signUpData.user) throw new Error('Gagal membuat akun');
 
         // Fetch config for role
@@ -56,7 +64,7 @@ export default function Login({ webName }: { webName: string }) {
         if (signInError) throw signInError;
       }
       
-      navigate('/');
+      // Let App.tsx onAuthStateChange handle the navigation
     } catch (err: any) {
       console.error('Auth error:', err);
       if (err.code === '23505') setError('Email sudah terdaftar');

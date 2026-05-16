@@ -49,6 +49,8 @@ export default function Install({ onComplete }: { onComplete: () => void }) {
         // If user already exists, we might get an error. We can ignore it if we just want to ensure the profile exists.
         if (authError.message.includes('already registered')) {
           console.log('Admin user already exists in Auth');
+        } else if (authError.message.toLowerCase().includes('confirmation email')) {
+          console.warn('Gagal mengirim email konfirmasi dari Supabase Auth, tetapi instalasi tetap dilanjutkan.');
         } else {
           throw authError;
         }

@@ -359,7 +359,11 @@ export const supabaseService = {
     
     if (error) {
       console.error('Error saving config to Supabase:', error);
-      throw new Error(`Supabase Error: ${error.message} (${error.code})`);
+      let errorMessage = error.message;
+      if (errorMessage?.includes('Failed to fetch')) {
+        throw new Error('Supabase Error: Gagal terhubung ke database. Pastikan VITE_SUPABASE_URL sudah diisi dengan benar (menggunakan url https://...) dan Anda telah menjalankan script database.sql di Supabase SQL Editor.');
+      }
+      throw new Error(`Supabase Error: ${errorMessage} (${error.code})`);
     }
     return true;
   }
