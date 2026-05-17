@@ -60,6 +60,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  *   webname text not null,
  *   adminemail text not null,
  *   adminpassword text,
+ *   logo_url text,
+ *   facebook_url text,
+ *   instagram_url text,
+ *   tiktok_url text,
+ *   youtube_url text,
  *   isinstalled boolean default true,
  *   installedat timestamp with time zone default timezone('utc'::text, now())
  * );

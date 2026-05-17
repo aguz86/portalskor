@@ -4,7 +4,7 @@ import { Mail, ArrowRight, AlertCircle, CheckCircle2, ChevronLeft } from 'lucide
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 
-export default function ForgotPassword() {
+export default function ForgotPassword({ webName = '', logoUrl }: { webName?: string, logoUrl?: string }) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -50,9 +50,13 @@ export default function ForgotPassword() {
           </div>
           
           <div className="flex justify-center">
-            <div className="p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 shadow-2xl shadow-emerald-500/10">
-              <Mail className="w-12 h-12 text-emerald-500" />
-            </div>
+            {logoUrl ? (
+              <img src={logoUrl} alt={webName} className="h-24 max-w-[180px] object-contain drop-shadow-2xl" />
+            ) : (
+              <div className="p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 shadow-2xl shadow-emerald-500/10">
+                <Mail className="w-12 h-12 text-emerald-500" />
+              </div>
+            )}
           </div>
           
           <div className="space-y-2">

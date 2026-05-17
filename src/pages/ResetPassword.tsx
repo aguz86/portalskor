@@ -4,7 +4,7 @@ import { Lock, ArrowRight, AlertCircle, CheckCircle2, ShieldCheck } from 'lucide
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 
-export default function ResetPassword() {
+export default function ResetPassword({ webName = '', logoUrl }: { webName?: string, logoUrl?: string }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -62,9 +62,13 @@ export default function ResetPassword() {
       >
         <div className="text-center space-y-4">
           <div className="flex justify-center">
-            <div className="p-4 bg-blue-500/10 rounded-2xl border border-blue-500/20 shadow-2xl shadow-blue-500/10">
-              <ShieldCheck className="w-12 h-12 text-blue-500" />
-            </div>
+            {logoUrl ? (
+              <img src={logoUrl} alt={webName} className="h-24 max-w-[180px] object-contain drop-shadow-2xl" />
+            ) : (
+              <div className="p-4 bg-blue-500/10 rounded-2xl border border-blue-500/20 shadow-2xl shadow-blue-500/10">
+                <ShieldCheck className="w-12 h-12 text-blue-500" />
+              </div>
+            )}
           </div>
           
           <div className="space-y-2">

@@ -5,7 +5,7 @@ import { Trophy, Globe, ShieldCheck, Mail, Lock, User, ArrowRight } from 'lucide
 import { motion, AnimatePresence } from 'motion/react';
 import { Link, useNavigate } from 'react-router-dom';
 
-export default function Login({ webName }: { webName: string }) {
+export default function Login({ webName, logoUrl }: { webName: string, logoUrl?: string }) {
   const navigate = useNavigate();
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
@@ -94,24 +94,30 @@ export default function Login({ webName }: { webName: string }) {
         className="text-center space-y-8 max-w-md w-full"
       >
         <div className="flex justify-center">
-          <div className="p-5 bg-emerald-500/10 rounded-3xl ring-1 ring-emerald-500/20 shadow-2xl shadow-emerald-500/10">
-            <Trophy className="w-16 h-16 text-emerald-500" />
-          </div>
+          {logoUrl ? (
+            <img src={logoUrl} alt={webName} className="h-32 max-w-[240px] object-contain drop-shadow-2xl" />
+          ) : (
+            <div className="p-5 bg-emerald-500/10 rounded-3xl ring-1 ring-emerald-500/20 shadow-2xl shadow-emerald-500/10">
+              <Trophy className="w-16 h-16 text-emerald-500" />
+            </div>
+          )}
         </div>
 
-        <div className="space-y-3">
-          <h1 className="text-5xl font-black tracking-tight text-white">
-            {webName.split(' ').map((word, i) => (
-              <span key={i} className={i === 1 ? 'text-emerald-500' : ''}>
-                {word}{' '}
-              </span>
-            ))}
-          </h1>
-          <p className="text-zinc-400 text-lg font-medium leading-relaxed">
-            Platform Portal Skor terpercaya. <br />
-            Menangkan hadiah menarik setiap harinya.
-          </p>
-        </div>
+        {!logoUrl && (
+          <div className="space-y-3">
+            <h1 className="text-5xl font-black tracking-tight text-white">
+              {webName.split(' ').map((word, i) => (
+                <span key={i} className={i === 1 ? 'text-emerald-500' : ''}>
+                  {word}{' '}
+                </span>
+              ))}
+            </h1>
+            <p className="text-zinc-400 text-lg font-medium leading-relaxed">
+              Platform Portal Skor terpercaya. <br />
+              Menangkan hadiah menarik setiap harinya.
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4 text-left">
           <div className="p-4 bg-zinc-900/50 rounded-2xl border border-white/5 space-y-2">
@@ -222,15 +228,6 @@ export default function Login({ webName }: { webName: string }) {
                   className="inline-block py-2 text-sm font-bold text-emerald-500 hover:text-emerald-400 transition-colors"
                 >
                   Lupa Password?
-                </Link>
-              </div>
-
-              <div className="pt-2">
-                <Link 
-                  to="/admin/login" 
-                  className="inline-block py-3 px-6 text-[10px] font-black text-zinc-600 hover:text-blue-500 uppercase tracking-[0.2em] transition-colors hover:bg-blue-500/5 rounded-lg"
-                >
-                  Admin Login
                 </Link>
               </div>
             </div>

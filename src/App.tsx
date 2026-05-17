@@ -10,7 +10,7 @@ import AdminLogin from './pages/AdminLogin';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Install from './pages/Install';
-import { LogOut, Shield, Trophy } from 'lucide-react';
+import { LogOut, Shield, Trophy, Facebook, Instagram, Youtube, Music4 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -18,12 +18,15 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+import ResetInstall from './pages/ResetInstall';
+
 export default function App() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isInstalled, setIsInstalled] = useState<boolean | null>(null);
   const [webName, setWebName] = useState('Portal Skor');
   const [adminEmail, setAdminEmail] = useState('');
+  const [appConfig, setAppConfig] = useState<any>(null);
 
   useEffect(() => {
     // Check installation status
@@ -35,6 +38,7 @@ export default function App() {
             setIsInstalled(true);
             setWebName(config.webName || 'Portal Skor');
             setAdminEmail(config.adminEmail || '');
+            setAppConfig(config);
             return;
           }
         } catch (error) {
@@ -57,8 +61,18 @@ export default function App() {
         .channel('settings_changes')
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'settings', filter: 'id=eq.config' }, payload => {
           const data = payload.new as any;
-          setWebName(data.webName || 'Portal Skor');
-          setAdminEmail(data.adminEmail || '');
+          setWebName(data.webname || 'Portal Skor');
+          setAdminEmail(data.adminemail || '');
+          setAppConfig({
+            ...appConfig,
+            webName: data.webname,
+            adminEmail: data.adminemail,
+            logoUrl: data.logo_url,
+            facebookUrl: data.facebook_url,
+            youtubeUrl: data.youtube_url,
+            instagramUrl: data.instagram_url,
+            tiktokUrl: data.tiktok_url
+          });
         })
         .subscribe();
 
@@ -117,10 +131,35 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    let timer: any;
+    if (loading || isInstalled === null) {
+      timer = setTimeout(() => {
+        const btnContainer = document.getElementById('loader-container');
+        if (btnContainer && !document.getElementById('reset-btn')) {
+          const btn = document.createElement('a');
+          btn.id = 'reset-btn';
+          btn.href = '/reset-install';
+          btn.innerText = 'Reset Instalasi';
+          btn.className = 'mt-4 px-4 py-2 bg-zinc-800 text-white rounded-xl text-sm font-bold border border-white/10 hover:bg-zinc-700';
+          btnContainer.appendChild(btn);
+        }
+      }, 5000);
+    }
+    return () => clearTimeout(timer);
+  }, [loading, isInstalled]);
+
+  if (window.location.pathname === '/reset-install') {
+    return <ResetInstall />;
+  }
+
   if (loading || isInstalled === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-white">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+          <div id="loader-container"></div>
+        </div>
       </div>
     );
   }
@@ -137,12 +176,16 @@ export default function App() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between h-16 items-center">
                 <div className="flex items-center gap-8">
-                  <Link to="/" className="flex items-center gap-2 group">
-                    <div className="p-2 bg-emerald-500/10 rounded-lg group-hover:bg-emerald-500/20 transition-colors">
-                      <Trophy className="w-6 h-6 text-emerald-500" />
-                    </div>
-                    <span className="font-bold text-xl tracking-tight">{webName}</span>
-                  </Link>
+                  <a href="/" className="flex items-center gap-2 group">
+                    {appConfig?.logoUrl ? (
+                      <img src={appConfig.logoUrl} alt={webName} className="h-8 max-w-[120px] object-contain" />
+                    ) : (
+                      <div className="p-2 bg-emerald-500/10 rounded-lg group-hover:bg-emerald-500/20 transition-colors">
+                        <Trophy className="w-6 h-6 text-emerald-500" />
+                      </div>
+                    )}
+                    {!appConfig?.logoUrl && <span className="font-bold text-xl tracking-tight">{webName}</span>}
+                  </a>
                   <div className="hidden md:flex items-center gap-6">
                     <Link to="/" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Home</Link>
                     {user.role === 'admin' && (
@@ -178,14 +221,44 @@ export default function App() {
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Routes>
-            <Route path="/login" element={!user ? <Login webName={webName} /> : <Navigate to="/" />} />
-            <Route path="/admin/login" element={!user ? <AdminLogin webName={webName} /> : (user.role === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/" />)} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/login" element={!user ? <Login webName={webName} logoUrl={appConfig?.logoUrl} /> : <Navigate to="/" />} />
+            <Route path="/admin/login" element={!user ? <AdminLogin webName={webName} logoUrl={appConfig?.logoUrl} /> : (user.role === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/" />)} />
+            <Route path="/forgot-password" element={<ForgotPassword webName={webName} logoUrl={appConfig?.logoUrl} />} />
+            <Route path="/reset-password" element={<ResetPassword webName={webName} logoUrl={appConfig?.logoUrl} />} />
             <Route path="/" element={user ? <Home user={user} webName={webName} /> : <Navigate to="/login" />} />
             <Route path="/admin" element={user?.role === 'admin' ? <Admin webName={webName} /> : <Navigate to="/admin/login" />} />
           </Routes>
         </main>
+
+        {user && (!user.role || user.role === 'user') && (
+          <footer className="border-t border-white/5 py-8 mt-12 bg-zinc-900/10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center gap-6">
+              <div className="flex items-center gap-6">
+                {appConfig?.facebookUrl && (
+                  <a href={appConfig.facebookUrl} target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-emerald-500 transition-colors p-2 hover:bg-emerald-500/10 rounded-full">
+                    <Facebook className="w-5 h-5" />
+                  </a>
+                )}
+                {appConfig?.instagramUrl && (
+                  <a href={appConfig.instagramUrl} target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-emerald-500 transition-colors p-2 hover:bg-emerald-500/10 rounded-full">
+                    <Instagram className="w-5 h-5" />
+                  </a>
+                )}
+                {appConfig?.tiktokUrl && (
+                  <a href={appConfig.tiktokUrl} target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-emerald-500 transition-colors p-2 hover:bg-emerald-500/10 rounded-full">
+                    <Music4 className="w-5 h-5" />
+                  </a>
+                )}
+                {appConfig?.youtubeUrl && (
+                  <a href={appConfig.youtubeUrl} target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-emerald-500 transition-colors p-2 hover:bg-emerald-500/10 rounded-full">
+                    <Youtube className="w-5 h-5" />
+                  </a>
+                )}
+              </div>
+              <p className="text-sm font-medium text-zinc-500">&copy; {new Date().getFullYear()} {webName}. All rights reserved.</p>
+            </div>
+          </footer>
+        )}
       </div>
     </Router>
   );

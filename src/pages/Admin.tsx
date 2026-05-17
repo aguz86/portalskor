@@ -10,7 +10,8 @@ export default function Admin({ webName }: { webName: string }) {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
-  const [activeTab, setActiveTab] = useState<'matches' | 'withdrawals' | 'users' | 'supabase'>('matches');
+  const [config, setConfig] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'matches' | 'withdrawals' | 'users' | 'settings' | 'supabase'>('matches');
   const [supabaseStatus, setSupabaseStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   
   // Form states
@@ -22,21 +23,24 @@ export default function Admin({ webName }: { webName: string }) {
   const [newTotalPrize, setNewTotalPrize] = useState(50000);
   const [newWinnerCount, setNewWinnerCount] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   const fetchData = async () => {
     try {
-      const [matchesRes, predictionsRes, withdrawalsRes, usersRes] = await Promise.all([
+      const [matchesRes, predictionsRes, withdrawalsRes, usersRes, configRes] = await Promise.all([
         supabaseService.getAllMatches(),
         supabaseService.getAllPredictions(),
         supabaseService.getAllWithdrawals(),
-        supabaseService.getAllUsers()
+        supabaseService.getAllUsers(),
+        supabaseService.getConfig()
       ]);
 
       setMatches(matchesRes);
       setPredictions(predictionsRes);
       setWithdrawals(withdrawalsRes);
       setUsers(usersRes);
+      setConfig(configRes);
     } catch (error) {
       console.error('Error fetching admin data:', error);
     }
@@ -182,6 +186,32 @@ export default function Admin({ webName }: { webName: string }) {
     }
   };
 
+  const handleSaveSettings = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSavingConfig(true);
+    try {
+      const formData = new FormData(e.currentTarget);
+      const newConfig = {
+        ...config,
+        webName: formData.get('webName'),
+        logoUrl: formData.get('logoUrl'),
+        facebookUrl: formData.get('facebookUrl'),
+        instagramUrl: formData.get('instagramUrl'),
+        tiktokUrl: formData.get('tiktokUrl'),
+        youtubeUrl: formData.get('youtubeUrl'),
+      };
+      await supabaseService.saveConfig(newConfig);
+      setConfig(newConfig);
+      setMessage({ type: 'success', text: 'Pengaturan berhasil disimpan!' });
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: 'error', text: 'Gagal menyimpan pengaturan.' });
+    } finally {
+      setIsSavingConfig(false);
+      setTimeout(() => setMessage(null), 3000);
+    }
+  };
+
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -189,8 +219,8 @@ export default function Admin({ webName }: { webName: string }) {
           <h2 className="text-3xl font-black text-white tracking-tight">Admin <span className="text-blue-500">Panel</span></h2>
           <p className="text-zinc-500 font-medium">Manajemen pertandingan dan penarikan hadiah.</p>
         </div>
-        <div className="flex gap-2 p-1 bg-zinc-900/50 rounded-2xl border border-white/5">
-          {(['matches', 'withdrawals', 'users', 'supabase'] as const).map((tab) => (
+        <div className="flex gap-2 p-1 bg-zinc-900/50 rounded-2xl border border-white/5 flex-wrap">
+          {(['matches', 'withdrawals', 'users', 'settings', 'supabase'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -489,6 +519,71 @@ export default function Admin({ webName }: { webName: string }) {
           </div>
         )}
 
+        {activeTab === 'settings' && (
+          <form onSubmit={handleSaveSettings} className="space-y-6 bg-zinc-900/50 p-6 md:p-8 rounded-3xl border border-white/5">
+            <h3 className="text-xl font-bold text-white mb-6">Pengaturan Website</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-zinc-400">Nama Website</label>
+                <input
+                  name="webName"
+                  defaultValue={config?.webName || ''}
+                  className="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white font-medium"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-zinc-400">Logo URL</label>
+                <input
+                  name="logoUrl"
+                  defaultValue={config?.logoUrl || ''}
+                  className="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white font-medium"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-zinc-400">Facebook URL</label>
+                <input
+                  name="facebookUrl"
+                  defaultValue={config?.facebookUrl || ''}
+                  className="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white font-medium"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-zinc-400">Instagram URL</label>
+                <input
+                  name="instagramUrl"
+                  defaultValue={config?.instagramUrl || ''}
+                  className="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white font-medium"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-zinc-400">TikTok URL</label>
+                <input
+                  name="tiktokUrl"
+                  defaultValue={config?.tiktokUrl || ''}
+                  className="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white font-medium"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-zinc-400">YouTube URL</label>
+                <input
+                  name="youtubeUrl"
+                  defaultValue={config?.youtubeUrl || ''}
+                  className="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white font-medium"
+                />
+              </div>
+            </div>
+            <div className="pt-4 border-t border-white/5 flex justify-end">
+              <button
+                type="submit"
+                disabled={isSavingConfig}
+                className="px-8 py-3 bg-emerald-500 text-zinc-950 font-black rounded-xl hover:bg-emerald-400 transition-all flex items-center gap-2"
+              >
+                {isSavingConfig ? 'Menyimpan...' : 'Simpan Pengaturan'}
+              </button>
+            </div>
+          </form>
+        )}
+
         {activeTab === 'supabase' && (
           <div className="space-y-6">
             <div className="bg-zinc-900/50 border border-white/5 rounded-3xl p-8 space-y-6">
@@ -589,6 +684,11 @@ create table settings (
   webname text not null,
   adminemail text not null,
   adminpassword text,
+  logo_url text,
+  facebook_url text,
+  instagram_url text,
+  tiktok_url text,
+  youtube_url text,
   isinstalled boolean default true,
   installedat timestamp with time zone default timezone('utc'::text, now())
 );

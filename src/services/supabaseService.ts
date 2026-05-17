@@ -341,7 +341,12 @@ export const supabaseService = {
       adminEmail: data.adminemail,
       adminPassword: data.adminpassword,
       isInstalled: data.isinstalled,
-      installedAt: data.installedat
+      installedAt: data.installedat,
+      logoUrl: data.logo_url,
+      youtubeUrl: data.youtube_url,
+      facebookUrl: data.facebook_url,
+      instagramUrl: data.instagram_url,
+      tiktokUrl: data.tiktok_url
     };
   },
 
@@ -354,7 +359,12 @@ export const supabaseService = {
         adminemail: config.adminEmail,
         adminpassword: config.adminPassword,
         isinstalled: config.isInstalled,
-        installedat: config.installedAt
+        installedat: config.installedAt,
+        logo_url: config.logoUrl,
+        youtube_url: config.youtubeUrl,
+        facebook_url: config.facebookUrl,
+        instagram_url: config.instagramUrl,
+        tiktok_url: config.tiktokUrl
       }]);
     
     if (error) {

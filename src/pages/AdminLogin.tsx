@@ -5,7 +5,7 @@ import { Shield, Lock, Mail, ArrowRight, AlertCircle, ChevronLeft } from 'lucide
 import { motion } from 'motion/react';
 import { useNavigate, Link } from 'react-router-dom';
 
-export default function AdminLogin({ webName }: { webName: string }) {
+export default function AdminLogin({ webName, logoUrl }: { webName: string, logoUrl?: string }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -94,19 +94,25 @@ export default function AdminLogin({ webName }: { webName: string }) {
           </div>
           
           <div className="flex justify-center">
-            <div className="p-4 bg-blue-500/10 rounded-2xl border border-blue-500/20 shadow-2xl shadow-blue-500/10">
-              <Shield className="w-12 h-12 text-blue-500" />
-            </div>
+            {logoUrl ? (
+              <img src={logoUrl} alt={webName} className="h-24 max-w-[180px] object-contain drop-shadow-2xl" />
+            ) : (
+              <div className="p-4 bg-blue-500/10 rounded-2xl border border-blue-500/20 shadow-2xl shadow-blue-500/10">
+                <Shield className="w-12 h-12 text-blue-500" />
+              </div>
+            )}
           </div>
           
-          <div className="space-y-2">
-            <h1 className="text-3xl font-black text-white tracking-tight italic uppercase">
-              Admin <span className="text-blue-500">Portal</span>
-            </h1>
-            <p className="text-zinc-500 text-sm font-medium">
-              Masuk ke panel kontrol {webName}
-            </p>
-          </div>
+          {!logoUrl && (
+            <div className="space-y-2">
+              <h1 className="text-3xl font-black text-white tracking-tight italic uppercase">
+                Admin <span className="text-blue-500">Portal</span>
+              </h1>
+              <p className="text-zinc-500 text-sm font-medium">
+                Masuk ke panel kontrol {webName}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="bg-zinc-900 border border-white/5 p-8 rounded-[40px] shadow-2xl relative overflow-hidden">
