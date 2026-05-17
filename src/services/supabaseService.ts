@@ -30,16 +30,16 @@ export const supabaseService = {
     }
     return (data as any[]).map(m => ({
       id: m.id,
-      teamA: m.teama,
-      logoA: m.logoa,
-      teamB: m.teamb,
-      logoB: m.logob,
+      teamA: m.teamA,
+      logoA: m.logoA,
+      teamB: m.teamB,
+      logoB: m.logoB,
       status: m.status,
-      resultA: m.resulta,
-      resultB: m.resultb,
+      resultA: m.resultA,
+      resultB: m.resultB,
       deadline: m.deadline,
-      totalPrize: m.totalprize,
-      winnerCount: m.winnercount,
+      totalPrize: m.totalPrize,
+      winnerCount: m.winnerCount,
       created_at: m.created_at
     })) as Match[];
   },
@@ -56,16 +56,16 @@ export const supabaseService = {
     }
     return (data as any[]).map(m => ({
       id: m.id,
-      teamA: m.teama,
-      logoA: m.logoa,
-      teamB: m.teamb,
-      logoB: m.logob,
+      teamA: m.teamA,
+      logoA: m.logoA,
+      teamB: m.teamB,
+      logoB: m.logoB,
       status: m.status,
-      resultA: m.resulta,
-      resultB: m.resultb,
+      resultA: m.resultA,
+      resultB: m.resultB,
       deadline: m.deadline,
-      totalPrize: m.totalprize,
-      winnerCount: m.winnercount,
+      totalPrize: m.totalPrize,
+      winnerCount: m.winnerCount,
       created_at: m.created_at
     })) as Match[];
   },

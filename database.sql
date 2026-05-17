@@ -57,26 +57,40 @@ CREATE TABLE IF NOT EXISTS public.withdrawals (
 );
 
 -- Mengaktifkan Realtime untuk tabel-tabel berikut supaya perubahan langsung masuk ke aplikasi
-ALTER PUBLICATION supabase_realtime ADD TABLE public.settings;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.matches;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.predictions;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.withdrawals;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
+DO $$
+DECLARE
+    tbl text;
+BEGIN
+    FOR tbl IN SELECT unnest(ARRAY['public.settings', 'public.matches', 'public.predictions', 'public.withdrawals', 'public.users'])
+    LOOP
+        BEGIN
+            EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE %s', tbl);
+        EXCEPTION WHEN duplicate_object THEN
+            -- Ignore error
+        END;
+    END LOOP;
+END;
+$$;
 
 -- Menonaktifkan peringatan Row Level Security (RLS) dengan membuat policy dummy yang allow semua
 -- PENTING: Untuk aplikasi di mode produksi, RLS harus dikonfigurasi lebih ketat.
 -- Namun karena logika akses ada di frontend, kita buka aksesnya.
 ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for settings" ON public.settings;
 CREATE POLICY "Enable all for settings" ON public.settings FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for users" ON public.users;
 CREATE POLICY "Enable all for users" ON public.users FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE public.matches ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for matches" ON public.matches;
 CREATE POLICY "Enable all for matches" ON public.matches FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE public.predictions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for predictions" ON public.predictions;
 CREATE POLICY "Enable all for predictions" ON public.predictions FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE public.withdrawals ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for withdrawals" ON public.withdrawals;
 CREATE POLICY "Enable all for withdrawals" ON public.withdrawals FOR ALL USING (true) WITH CHECK (true);
