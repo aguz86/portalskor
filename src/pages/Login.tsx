@@ -64,7 +64,7 @@ export default function Login({ webName }: { webName: string }) {
         if (signInError) throw signInError;
       }
       
-      // Let App.tsx onAuthStateChange handle the navigation
+      window.location.reload();
     } catch (err: any) {
       console.error('Auth error:', err);
       if (err.code === '23505') setError('Email sudah terdaftar');

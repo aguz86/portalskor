@@ -74,14 +74,14 @@ export const supabaseService = {
     const { error } = await supabase
       .from('matches')
       .insert([{
-        teama: match.teamA,
-        logoa: match.logoA,
-        teamb: match.teamB,
-        logob: match.logoB,
+        teamA: match.teamA,
+        logoA: match.logoA,
+        teamB: match.teamB,
+        logoB: match.logoB,
         status: match.status,
         deadline: match.deadline,
-        totalprize: match.totalPrize,
-        winnercount: match.winnerCount,
+        totalPrize: match.totalPrize,
+        winnerCount: match.winnerCount,
         created_at: new Date().toISOString()
       }]);
     
@@ -94,16 +94,16 @@ export const supabaseService = {
 
   async updateMatch(id: string, updates: Partial<Match>): Promise<boolean> {
     const mappedUpdates: any = {};
-    if (updates.teamA !== undefined) mappedUpdates.teama = updates.teamA;
-    if (updates.logoA !== undefined) mappedUpdates.logoa = updates.logoA;
-    if (updates.teamB !== undefined) mappedUpdates.teamb = updates.teamB;
-    if (updates.logoB !== undefined) mappedUpdates.logob = updates.logoB;
+    if (updates.teamA !== undefined) mappedUpdates.teamA = updates.teamA;
+    if (updates.logoA !== undefined) mappedUpdates.logoA = updates.logoA;
+    if (updates.teamB !== undefined) mappedUpdates.teamB = updates.teamB;
+    if (updates.logoB !== undefined) mappedUpdates.logoB = updates.logoB;
     if (updates.status !== undefined) mappedUpdates.status = updates.status;
-    if (updates.resultA !== undefined) mappedUpdates.resulta = updates.resultA;
-    if (updates.resultB !== undefined) mappedUpdates.resultb = updates.resultB;
+    if (updates.resultA !== undefined) mappedUpdates.resultA = updates.resultA;
+    if (updates.resultB !== undefined) mappedUpdates.resultB = updates.resultB;
     if (updates.deadline !== undefined) mappedUpdates.deadline = updates.deadline;
-    if (updates.totalPrize !== undefined) mappedUpdates.totalprize = updates.totalPrize;
-    if (updates.winnerCount !== undefined) mappedUpdates.winnercount = updates.winnerCount;
+    if (updates.totalPrize !== undefined) mappedUpdates.totalPrize = updates.totalPrize;
+    if (updates.winnerCount !== undefined) mappedUpdates.winnerCount = updates.winnerCount;
 
     const { error } = await supabase
       .from('matches')
@@ -122,7 +122,7 @@ export const supabaseService = {
     const { data, error } = await supabase
       .from('predictions')
       .select('*')
-      .eq('userid', userId)
+      .eq('userId', userId)
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -131,10 +131,10 @@ export const supabaseService = {
     }
     return (data as any[]).map(p => ({
       id: p.id,
-      userId: p.userid,
-      matchId: p.matchid,
-      scoreA: p.scorea,
-      scoreB: p.scoreb,
+      userId: p.userId,
+      matchId: p.matchId,
+      scoreA: p.scoreA,
+      scoreB: p.scoreB,
       status: p.status,
       created_at: p.created_at
     })) as Prediction[];
@@ -152,10 +152,10 @@ export const supabaseService = {
     }
     return (data as any[]).map(p => ({
       id: p.id,
-      userId: p.userid,
-      matchId: p.matchid,
-      scoreA: p.scorea,
-      scoreB: p.scoreb,
+      userId: p.userId,
+      matchId: p.matchId,
+      scoreA: p.scoreA,
+      scoreB: p.scoreB,
       status: p.status,
       created_at: p.created_at
     })) as Prediction[];
@@ -165,7 +165,7 @@ export const supabaseService = {
     const { data, error } = await supabase
       .from('predictions')
       .select('*')
-      .eq('matchid', matchId);
+      .eq('matchId', matchId);
     
     if (error) {
       console.error('Error fetching match predictions from Supabase:', error);
@@ -173,10 +173,10 @@ export const supabaseService = {
     }
     return (data as any[]).map(p => ({
       id: p.id,
-      userId: p.userid,
-      matchId: p.matchid,
-      scoreA: p.scorea,
-      scoreB: p.scoreb,
+      userId: p.userId,
+      matchId: p.matchId,
+      scoreA: p.scoreA,
+      scoreB: p.scoreB,
       status: p.status,
       created_at: p.created_at
     })) as Prediction[];
@@ -186,10 +186,10 @@ export const supabaseService = {
     const { error } = await supabase
       .from('predictions')
       .insert([{
-        userid: prediction.userId,
-        matchid: prediction.matchId,
-        scorea: prediction.scoreA,
-        scoreb: prediction.scoreB,
+        userId: prediction.userId,
+        matchId: prediction.matchId,
+        scoreA: prediction.scoreA,
+        scoreB: prediction.scoreB,
         status: prediction.status,
         created_at: new Date().toISOString()
       }]);
@@ -203,10 +203,10 @@ export const supabaseService = {
 
   async updatePrediction(id: string, updates: Partial<Prediction>): Promise<boolean> {
     const mappedUpdates: any = {};
-    if (updates.userId !== undefined) mappedUpdates.userid = updates.userId;
-    if (updates.matchId !== undefined) mappedUpdates.matchid = updates.matchId;
-    if (updates.scoreA !== undefined) mappedUpdates.scorea = updates.scoreA;
-    if (updates.scoreB !== undefined) mappedUpdates.scoreb = updates.scoreB;
+    if (updates.userId !== undefined) mappedUpdates.userId = updates.userId;
+    if (updates.matchId !== undefined) mappedUpdates.matchId = updates.matchId;
+    if (updates.scoreA !== undefined) mappedUpdates.scoreA = updates.scoreA;
+    if (updates.scoreB !== undefined) mappedUpdates.scoreB = updates.scoreB;
     if (updates.status !== undefined) mappedUpdates.status = updates.status;
 
     const { error } = await supabase
@@ -226,7 +226,7 @@ export const supabaseService = {
     const { data, error } = await supabase
       .from('withdrawals')
       .select('*')
-      .eq('userid', userId)
+      .eq('userId', userId)
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -235,7 +235,7 @@ export const supabaseService = {
     }
     return (data as any[]).map(w => ({
       id: w.id,
-      userId: w.userid,
+      userId: w.userId,
       amount: w.amount,
       status: w.status,
       created_at: w.created_at
@@ -254,7 +254,7 @@ export const supabaseService = {
     }
     return (data as any[]).map(w => ({
       id: w.id,
-      userId: w.userid,
+      userId: w.userId,
       amount: w.amount,
       status: w.status,
       created_at: w.created_at
@@ -265,7 +265,7 @@ export const supabaseService = {
     const { error } = await supabase
       .from('withdrawals')
       .insert([{
-        userid: withdrawal.userId,
+        userId: withdrawal.userId,
         amount: withdrawal.amount,
         status: withdrawal.status,
         created_at: new Date().toISOString()
@@ -280,7 +280,7 @@ export const supabaseService = {
 
   async updateWithdrawal(id: string, updates: Partial<Withdrawal>): Promise<boolean> {
     const mappedUpdates: any = {};
-    if (updates.userId !== undefined) mappedUpdates.userid = updates.userId;
+    if (updates.userId !== undefined) mappedUpdates.userId = updates.userId;
     if (updates.amount !== undefined) mappedUpdates.amount = updates.amount;
     if (updates.status !== undefined) mappedUpdates.status = updates.status;
 

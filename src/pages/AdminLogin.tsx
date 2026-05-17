@@ -59,10 +59,7 @@ export default function AdminLogin({ webName }: { webName: string }) {
         }
 
         if (userProfile && userProfile.role === 'admin') {
-          // Success! 
-          // Do nothing. The App.tsx onAuthStateChange will detect the login,
-          // update the user state, and React Router will automatically
-          // navigate us out of this page to the /admin dashboard.
+          window.location.reload();
         } else {
           await supabase.auth.signOut();
           throw new Error('Akses ditolak. Anda bukan administrator.');
