@@ -33,14 +33,10 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
         });
 
         if (signUpError) {
-          // If using Supabase without SMTP, it throws this but user MIGHT be created.
-          // However, best practice is to inform them to turn off confirm email OR 
-          // we ignore this error and show success screen so they wait for verification (if SMTP actually works and is rate limited, etc)
           if (signUpError.message?.toLowerCase().includes('confirmation email')) {
-             console.warn('Supabase sign up warning regarding confirmation email. Ignoring to show success screen.');
-          } else {
-             throw signUpError;
+             throw new Error('Gagal mengirim email konfirmasi. Silakan buka Dashboard Supabase Anda -> Authentication -> Providers -> Email, kemudian MATIKAN opsi "Confirm email".');
           }
+          throw signUpError;
         }
 
         if (!signUpData.user) throw new Error('Gagal membuat akun');
@@ -49,8 +45,9 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
         const config = await supabaseService.getConfig();
         const adminEmail = config?.adminEmail || '';
 
-        // Create user profile
-        const { error: profileError } = await supabase
+        // Create user profile - ignore error if RLS blocks it (e.g., waiting for email confirmation)
+        // App.tsx handles creating missing profiles cleanly upon next login.
+        await supabase
           .from('users')
           .insert([{
             uid: signUpData.user.id,
@@ -59,8 +56,7 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
             role: email === adminEmail ? 'admin' : 'user',
             balance: 0
           }]);
-        if (profileError) throw profileError;
-
+        
         setShowRegistrationSuccess(true);
         return; // Don't reload, show success screen
       } else {
@@ -78,6 +74,8 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
       else if (err.status === 400) {
         if (err.message?.toLowerCase().includes('confirm')) {
           setError('Email belum dikonfirmasi. Silakan cek kotak masuk email Anda atau hubungi admin untuk menonaktifkan konfirmasi email di Supabase.');
+        } else if (isSignUp) {
+          setError(err.message || 'Gagal membuat akun.');
         } else {
           setError('Email atau password salah');
         }
