@@ -13,14 +13,15 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
+
+  const [showVerifiedPopup, setShowVerifiedPopup] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('verified') === 'true') {
-      setSuccessMsg('Selamat, akun Anda telah berhasil diverifikasi. Silakan login, pastikan email dan password sesuai dengan database.');
+      setShowVerifiedPopup(true);
       // Force sign out just in case Supabase auto-logged them in
       supabase.auth.signOut().catch(() => {});
       // Clean up URL without triggering reload
@@ -46,6 +47,12 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
 
     try {
       if (isRegistering) {
+        // Prevent admin email from creating a regular user account
+        const config = await supabaseService.getConfig();
+        if (config?.adminEmail && email.toLowerCase() === config.adminEmail.toLowerCase()) {
+          throw new Error('Email ini tidak dapat didaftarkan sebagai pengguna.');
+        }
+
         if (!username.trim()) throw new Error('Username wajib diisi');
         if (!/^[a-zA-Z0-9]{1,8}$/.test(username.trim())) {
           throw new Error('Username maksimal 8 karakter tanpa spasi, hanya huruf dan angka.');
@@ -70,8 +77,8 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
         if (!signUpData.user) throw new Error('Gagal membuat akun. Pastikan email belum terdaftar sebelumnya.');
 
         // Fetch config for role
-        const config = await supabaseService.getConfig();
-        const adminEmail = config?.adminEmail || '';
+        const currentConfig = await supabaseService.getConfig();
+        const adminEmail = currentConfig?.adminEmail || '';
 
         // Create user profile - ignore error if RLS blocks it (e.g., waiting for email confirmation)
         // App.tsx handles creating missing profiles cleanly upon next login.
@@ -266,16 +273,6 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
               </div>
             </div>
 
-            {successMsg && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-4 rounded-xl text-sm font-medium"
-              >
-                {successMsg}
-              </motion.div>
-            )}
-
             {error && (
               <motion.p
                 initial={{ opacity: 0 }}
@@ -326,6 +323,43 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
         </p>
       </motion.div>
       )}
+
+      {/* Verified Popup */}
+      <AnimatePresence>
+        {showVerifiedPopup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-zinc-900 border border-white/10 rounded-3xl p-8 max-w-sm w-full shadow-2xl relative"
+            >
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2">
+                <div className="bg-emerald-500 w-20 h-20 rounded-2xl rotate-12 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                  <ShieldCheck className="w-10 h-10 text-zinc-950 -rotate-12" />
+                </div>
+              </div>
+              <div className="mt-12 text-center space-y-4">
+                <h3 className="text-xl font-black text-white">Verifikasi Berhasil!</h3>
+                <p className="text-zinc-400 text-sm">
+                  Selamat, akun Anda telah berhasil diverifikasi. Silakan login menggunakan email dan password yang telah Anda daftarkan.
+                </p>
+                <button
+                  onClick={() => setShowVerifiedPopup(false)}
+                  className="w-full py-3 bg-emerald-500 text-zinc-950 font-black rounded-xl hover:bg-emerald-400 transition-all mt-4"
+                >
+                  Masuk Sekarang
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

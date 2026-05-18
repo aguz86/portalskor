@@ -37,6 +37,7 @@ export interface Withdrawal {
   id: string;
   userId: string;
   amount: number;
+  wallet: string;
   status: 'pending' | 'approved' | 'rejected';
   created_at?: any;
 }

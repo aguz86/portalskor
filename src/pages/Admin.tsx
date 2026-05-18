@@ -446,6 +446,7 @@ export default function Admin({ webName }: { webName: string }) {
                     <div>
                       <p className="text-lg font-black text-white">Rp {w.amount.toLocaleString()}</p>
                       <p className="text-sm font-bold text-zinc-500">{user?.username} ({user?.email})</p>
+                      <p className="text-xs font-mono text-zinc-400 mt-1">Wallet: {w.wallet}</p>
                     </div>
                   </div>
                   <div className="flex gap-3">
@@ -675,6 +676,7 @@ create table withdrawals (
   id uuid default gen_random_uuid() primary key,
   userid text references users(uid),
   amount bigint not null,
+  wallet text not null,
   status text check (status in ('pending', 'approved', 'rejected')) default 'pending',
   created_at timestamp with time zone default timezone('utc'::text, now())
 );

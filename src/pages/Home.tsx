@@ -18,7 +18,8 @@ export default function Home({ user, webName }: HomeProps) {
   const [predictingMatch, setPredictingMatch] = useState<Match | null>(null);
   const [scoreA, setScoreA] = useState<number>(0);
   const [scoreB, setScoreB] = useState<number>(0);
-  const [withdrawAmount, setWithdrawAmount] = useState<number>(0);
+  const [withdrawAmountStr, setWithdrawAmountStr] = useState<string>('');
+  const [withdrawWallet, setWithdrawWallet] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -91,8 +92,13 @@ export default function Home({ user, webName }: HomeProps) {
   };
 
   const handleWithdraw = async () => {
+    const withdrawAmount = parseInt(withdrawAmountStr.replace(/\./g, '')) || 0;
     if (withdrawAmount <= 0 || withdrawAmount > user.balance) {
       setMessage({ type: 'error', text: 'Saldo tidak mencukupi atau jumlah tidak valid.' });
+      return;
+    }
+    if (!/^J\d{5}$/.test(withdrawWallet.trim())) {
+      setMessage({ type: 'error', text: 'Format wallet harus berupa J diikuti 5 angka (misal: J12345).' });
       return;
     }
     setIsSubmitting(true);
@@ -100,11 +106,13 @@ export default function Home({ user, webName }: HomeProps) {
       const success = await supabaseService.createWithdrawal({
         userId: user.uid,
         amount: withdrawAmount,
+        wallet: withdrawWallet.trim(),
         status: 'pending',
       });
       if (success) {
         setMessage({ type: 'success', text: 'Permintaan penarikan dikirim!' });
-        setWithdrawAmount(0);
+        setWithdrawAmountStr('');
+        setWithdrawWallet('');
       } else {
         throw new Error();
       }
@@ -285,20 +293,52 @@ export default function Home({ user, webName }: HomeProps) {
 
               <div className="bg-zinc-900/50 border border-white/5 rounded-3xl p-6 space-y-4">
                 <h4 className="text-sm font-bold text-white">Form Penarikan</h4>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Jumlah (IDR)</label>
-                  <input
-                    type="number"
-                    value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(Number(e.target.value))}
-                    className="w-full bg-zinc-800 border border-white/5 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                    placeholder="0"
-                  />
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Jumlah (IDR)</label>
+                    <input
+                      type="text"
+                      value={withdrawAmountStr}
+                      onChange={(e) => {
+                        let val = e.target.value.replace(/\D/g, '');
+                        if (!val) {
+                          setWithdrawAmountStr('');
+                          return;
+                        }
+                        val = val.replace(/^0+/, '');
+                        if (!val) val = '';
+                        const formatted = val.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                        setWithdrawAmountStr(formatted);
+                      }}
+                      className="w-full bg-zinc-800 border border-white/5 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Wallet Tujuan</label>
+                    <input
+                      type="text"
+                      value={withdrawWallet}
+                      onChange={(e) => {
+                        let val = e.target.value.toUpperCase();
+                        if (val && !val.startsWith('J')) {
+                          val = 'J' + val.replace(/\D/g, '');
+                        } else if (val) {
+                          val = 'J' + val.slice(1).replace(/\D/g, '');
+                        }
+                        setWithdrawWallet(val.slice(0, 6)); // J + 5 digits
+                      }}
+                      className="w-full bg-zinc-800 border border-white/5 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all tracking-[0.2em]"
+                      placeholder="J12345"
+                      maxLength={6}
+                    />
+                    <p className="text-[10px] text-zinc-500 font-medium">Format: J diikuti 5 angka (misal: J12345)</p>
+                  </div>
                 </div>
                 <button
                   onClick={handleWithdraw}
-                  disabled={isSubmitting || withdrawAmount <= 0}
-                  className="w-full py-4 bg-white text-zinc-950 font-black rounded-xl hover:bg-zinc-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  disabled={isSubmitting || !withdrawAmountStr || withdrawWallet.length !== 6}
+                  className="w-full py-4 bg-white text-zinc-950 font-black rounded-xl hover:bg-zinc-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
                 >
                   <Send className="w-4 h-4" />
                   Tarik Hadiah
@@ -316,7 +356,7 @@ export default function Home({ user, webName }: HomeProps) {
                     </div>
                     <div>
                       <p className="text-sm font-bold text-white">Rp {w.amount.toLocaleString()}</p>
-                      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">{new Date(w.created_at).toLocaleDateString()}</p>
+                      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">{new Date(w.created_at).toLocaleDateString()} &middot; {w.wallet}</p>
                     </div>
                   </div>
                   <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${

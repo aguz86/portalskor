@@ -197,7 +197,7 @@ export default function App() {
                     {!appConfig?.logoUrl && <span className="font-bold text-xl tracking-tight">{webName}</span>}
                   </a>
                   <div className="hidden md:flex items-center gap-6">
-                    <Link to="/" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Home</Link>
+                    <Link to="/user" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Home</Link>
                     {user.role === 'admin' && (
                       <Link to="/admin" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors flex items-center gap-1.5">
                         <Shield className="w-4 h-4" /> Admin
@@ -231,11 +231,12 @@ export default function App() {
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Routes>
-            <Route path="/login" element={!user ? <Login webName={webName} logoUrl={appConfig?.logoUrl} /> : <Navigate to="/" />} />
-            <Route path="/admin/login" element={!user ? <AdminLogin webName={webName} logoUrl={appConfig?.logoUrl} /> : (user.role === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/" />)} />
+            <Route path="/login" element={!user ? <Login webName={webName} logoUrl={appConfig?.logoUrl} /> : <Navigate to={user.role === 'admin' ? "/admin" : "/user"} />} />
+            <Route path="/admin/login" element={!user ? <AdminLogin webName={webName} logoUrl={appConfig?.logoUrl} /> : (user.role === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/user" />)} />
             <Route path="/forgot-password" element={<ForgotPassword webName={webName} logoUrl={appConfig?.logoUrl} />} />
             <Route path="/reset-password" element={<ResetPassword webName={webName} logoUrl={appConfig?.logoUrl} />} />
-            <Route path="/" element={user ? <Home user={user} webName={webName} /> : <Navigate to="/login" />} />
+            <Route path="/" element={<Navigate to={user ? (user.role === 'admin' ? '/admin' : '/user') : '/login'} replace />} />
+            <Route path="/user" element={user && (!user.role || user.role === 'user') ? <Home user={user} webName={webName} /> : <Navigate to={user?.role === 'admin' ? "/admin" : "/login"} />} />
             <Route path="/admin" element={user?.role === 'admin' ? <Admin webName={webName} /> : <Navigate to="/admin/login" />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -256,6 +256,7 @@ export const supabaseService = {
       id: w.id,
       userId: w.userId,
       amount: w.amount,
+      wallet: w.wallet,
       status: w.status,
       created_at: w.created_at
     })) as Withdrawal[];
@@ -267,6 +268,7 @@ export const supabaseService = {
       .insert([{
         userId: withdrawal.userId,
         amount: withdrawal.amount,
+        wallet: withdrawal.wallet,
         status: withdrawal.status,
         created_at: new Date().toISOString()
       }]);
