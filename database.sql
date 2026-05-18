@@ -1,96 +1,104 @@
--- Script instalasi Database Supabase untuk Portal Skor
-
--- 1. Buat tabel settings
-CREATE TABLE IF NOT EXISTS public.settings (
-    id TEXT PRIMARY KEY,
-    webname TEXT,
-    adminemail TEXT,
-    adminpassword TEXT,
-    isinstalled BOOLEAN DEFAULT FALSE,
-    installedat TEXT
+-- Users Table
+create table users (
+  uid text primary key,
+  username text not null,
+  email text not null,
+  role text check (role in ('admin', 'user')) default 'user',
+  balance bigint default 0,
+  created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- 2. Buat tabel users
-CREATE TABLE IF NOT EXISTS public.users (
-    uid TEXT PRIMARY KEY,
-    username TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
-    balance INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+-- Matches Table
+create table matches (
+  id uuid default gen_random_uuid() primary key,
+  teama text not null,
+  logoa text,
+  teamb text not null,
+  logob text,
+  status text check (status in ('open', 'closed')) default 'open',
+  resulta int,
+  resultb int,
+  deadline timestamp with time zone not null,
+  totalprize bigint default 50000,
+  winnercount int default 1,
+  created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- 3. Buat tabel matches
-CREATE TABLE IF NOT EXISTS public.matches (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "teamA" TEXT NOT NULL,
-    "logoA" TEXT,
-    "teamB" TEXT NOT NULL,
-    "logoB" TEXT,
-    status TEXT DEFAULT 'open' CHECK (status IN ('open', 'closed')),
-    "resultA" INTEGER,
-    "resultB" INTEGER,
-    deadline TIMESTAMP WITH TIME ZONE NOT NULL,
-    "totalPrize" INTEGER DEFAULT 0,
-    "winnerCount" INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+-- Predictions Table
+create table predictions (
+  id uuid default gen_random_uuid() primary key,
+  userid text references users(uid),
+  matchid uuid references matches(id),
+  scorea int not null,
+  scoreb int not null,
+  status text check (status in ('pending', 'won', 'lost')) default 'pending',
+  created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- 4. Buat tabel predictions
-CREATE TABLE IF NOT EXISTS public.predictions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "userId" TEXT REFERENCES public.users(uid) ON DELETE CASCADE,
-    "matchId" UUID REFERENCES public.matches(id) ON DELETE CASCADE,
-    "scoreA" INTEGER NOT NULL,
-    "scoreB" INTEGER NOT NULL,
-    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'won', 'lost')),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+-- Withdrawals Table
+create table withdrawals (
+  id uuid default gen_random_uuid() primary key,
+  userid text references users(uid),
+  amount bigint not null,
+  status text check (status in ('pending', 'approved', 'rejected')) default 'pending',
+  created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- 5. Buat tabel withdrawals
-CREATE TABLE IF NOT EXISTS public.withdrawals (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "userId" TEXT REFERENCES public.users(uid) ON DELETE CASCADE,
-    amount INTEGER NOT NULL CHECK (amount > 0),
-    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+-- Settings Table
+create table settings (
+  id text primary key default 'config',
+  webname text not null,
+  adminemail text not null,
+  adminpassword text,
+  logo_url text,
+  facebook_url text,
+  instagram_url text,
+  tiktok_url text,
+  youtube_url text,
+  isinstalled boolean default true,
+  installedat timestamp with time zone default timezone('utc'::text, now())
 );
 
--- Mengaktifkan Realtime untuk tabel-tabel berikut supaya perubahan langsung masuk ke aplikasi
-DO $$
-DECLARE
-    tbl text;
-BEGIN
-    FOR tbl IN SELECT unnest(ARRAY['public.settings', 'public.matches', 'public.predictions', 'public.withdrawals', 'public.users'])
-    LOOP
-        BEGIN
-            EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE %s', tbl);
-        EXCEPTION WHEN duplicate_object THEN
-            -- Ignore error
-        END;
-    END LOOP;
-END;
-$$;
+-- RLS POLICIES
 
--- Menonaktifkan peringatan Row Level Security (RLS) dengan membuat policy dummy yang allow semua
--- PENTING: Untuk aplikasi di mode produksi, RLS harus dikonfigurasi lebih ketat.
--- Namun karena logika akses ada di frontend, kita buka aksesnya.
-ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Enable all for settings" ON public.settings;
-CREATE POLICY "Enable all for settings" ON public.settings FOR ALL USING (true) WITH CHECK (true);
+-- Enable RLS
+alter table users enable row level security;
+alter table matches enable row level security;
+alter table predictions enable row level security;
+alter table withdrawals enable row level security;
+alter table settings enable row level security;
 
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Enable all for users" ON public.users;
-CREATE POLICY "Enable all for users" ON public.users FOR ALL USING (true) WITH CHECK (true);
+-- Users Policies
+create policy "Public profiles are viewable by everyone." on users for select using (true);
+create policy "Users can update own profile." on users for update using (auth.uid()::text = uid);
+create policy "Users can insert own profile." on users for insert with check (auth.uid()::text = uid);
 
-ALTER TABLE public.matches ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Enable all for matches" ON public.matches;
-CREATE POLICY "Enable all for matches" ON public.matches FOR ALL USING (true) WITH CHECK (true);
+-- Matches Policies
+create policy "Matches are viewable by everyone." on matches for select using (true);
+create policy "Admins can manage matches." on matches for all using (
+  exists (select 1 from users where uid = auth.uid()::text and role = 'admin')
+);
 
-ALTER TABLE public.predictions ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Enable all for predictions" ON public.predictions;
-CREATE POLICY "Enable all for predictions" ON public.predictions FOR ALL USING (true) WITH CHECK (true);
+-- Predictions Policies
+create policy "Users can view own predictions." on predictions for select using (auth.uid()::text = userId);
+create policy "Users can insert own predictions." on predictions for insert with check (auth.uid()::text = userId);
+create policy "Admins can view all predictions." on predictions for select using (
+  exists (select 1 from users where uid = auth.uid()::text and role = 'admin')
+);
+create policy "Admins can update predictions." on predictions for update using (
+  exists (select 1 from users where uid = auth.uid()::text and role = 'admin')
+);
 
-ALTER TABLE public.withdrawals ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Enable all for withdrawals" ON public.withdrawals;
-CREATE POLICY "Enable all for withdrawals" ON public.withdrawals FOR ALL USING (true) WITH CHECK (true);
+-- Withdrawals Policies
+create policy "Users can view own withdrawals." on withdrawals for select using (auth.uid()::text = userId);
+create policy "Users can insert own withdrawals." on withdrawals for insert with check (auth.uid()::text = userId);
+create policy "Admins can manage withdrawals." on withdrawals for all using (
+  exists (select 1 from users where uid = auth.uid()::text and role = 'admin')
+);
+
+-- Settings Policies
+create policy "Settings are viewable by everyone." on settings for select using (true);
+create policy "Admins can manage settings." on settings for all using (
+  exists (select 1 from users where uid = auth.uid()::text and role = 'admin')
+);
+create policy "Anyone can insert settings." on settings for insert with check (true);

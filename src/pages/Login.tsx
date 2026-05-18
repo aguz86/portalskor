@@ -13,6 +13,7 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,12 +32,15 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
           }
         });
 
-        // Supabase often throws error if Email Confirmation is enabled but SMTP is not configured or rate limited.
         if (signUpError) {
+          // If using Supabase without SMTP, it throws this but user MIGHT be created.
+          // However, best practice is to inform them to turn off confirm email OR 
+          // we ignore this error and show success screen so they wait for verification (if SMTP actually works and is rate limited, etc)
           if (signUpError.message?.toLowerCase().includes('confirmation email')) {
-             throw new Error('Gagal mengirim email konfirmasi. Silakan buka Dashboard Supabase Anda -> Authentication -> Providers -> Email, kemudian MATIKAN opsi "Confirm email".');
+             console.warn('Supabase sign up warning regarding confirmation email. Ignoring to show success screen.');
+          } else {
+             throw signUpError;
           }
-          throw signUpError;
         }
 
         if (!signUpData.user) throw new Error('Gagal membuat akun');
@@ -56,6 +60,9 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
             balance: 0
           }]);
         if (profileError) throw profileError;
+
+        setShowRegistrationSuccess(true);
+        return; // Don't reload, show success screen
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
@@ -87,6 +94,49 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
       <div className="absolute top-1/4 -left-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-[100px] -z-10" />
       <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-blue-500/10 rounded-full blur-[100px] -z-10" />
 
+      {showRegistrationSuccess ? (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center space-y-8 max-w-md w-full bg-zinc-900/50 p-8 rounded-3xl border border-white/5 shadow-2xl backdrop-blur-sm"
+        >
+          <div className="p-4 bg-emerald-500/10 rounded-2xl w-fit mx-auto mb-4 border border-emerald-500/20">
+            <Trophy className="w-10 h-10 text-emerald-500" />
+          </div>
+          <h2 className="text-3xl font-black text-white">Pendaftaran Berhasil!</h2>
+          <p className="text-zinc-400 text-sm font-medium">
+            Silakan verifikasi akun Anda jika diperlukan (cek email Anda). Berikut adalah detail login Anda yang telah didaftarkan:
+          </p>
+          
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 space-y-4 text-left">
+            <div>
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Username</p>
+              <p className="text-white font-medium">{username}</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Email</p>
+              <p className="text-white font-medium">{email}</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Password</p>
+              <p className="text-white font-medium">{password}</p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              setIsRegistering(false);
+              setShowRegistrationSuccess(false);
+              setUsername('');
+              setPassword('');
+              // Keep email to make it easier to login
+            }}
+            className="w-full py-4 bg-emerald-500 text-zinc-950 font-black rounded-2xl hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+          >
+            Kembali ke Login
+          </button>
+        </motion.div>
+      ) : (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -237,6 +287,7 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
           Dengan masuk, Anda menyetujui Syarat & Ketentuan kami.
         </p>
       </motion.div>
+      )}
     </div>
   );
 }

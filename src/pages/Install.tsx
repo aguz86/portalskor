@@ -9,6 +9,7 @@ export default function Install({ onComplete }: { onComplete: () => void }) {
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleInstall = async (e: React.FormEvent) => {
@@ -78,40 +79,12 @@ export default function Install({ onComplete }: { onComplete: () => void }) {
         }
       }
 
-      // 4. Send Real Confirmation Email via Resend
-      try {
-        await fetch('/api/send-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: adminEmail,
-            subject: `Instalasi ${webName} Berhasil!`,
-            html: `
-              <div style="font-family: sans-serif; padding: 20px; color: #333;">
-                <h1 style="color: #10b981;">Instalasi Berhasil!</h1>
-                <p>Halo <strong>${adminName}</strong>,</p>
-                <p>Aplikasi <strong>${webName}</strong> Anda telah berhasil diinstal.</p>
-                <p><strong>Detail Admin:</strong></p>
-                <ul>
-                  <li>Email: ${adminEmail}</li>
-                  <li>Password: (Sesuai yang Anda masukkan)</li>
-                </ul>
-                <p>Silakan login ke portal admin untuk mulai mengelola pertandingan.</p>
-                <br/>
-                <p>Salam,<br/>Sistem Instalasi</p>
-              </div>
-            `
-          })
-        });
-        setError('Instalasi Berhasil! Email konfirmasi telah dikirim ke email admin. Mengalihkan...');
-      } catch (emailErr) {
-        console.error('Email error:', emailErr);
-        setError('Instalasi Berhasil! Namun gagal mengirim email konfirmasi. Silakan cek dashboard Supabase.');
-      }
-
+      // 4. Show success on UI instead of sending email if not configured
+      setIsSuccess(true);
+      
       setTimeout(() => {
         onComplete();
-      }, 3000);
+      }, 10000); // 10 seconds to read details
     } catch (err: any) {
       console.error('Installation error:', err);
       setError(err.message || 'Gagal melakukan instalasi. Pastikan konfigurasi backend sudah benar.');
@@ -119,6 +92,50 @@ export default function Install({ onComplete }: { onComplete: () => void }) {
       setIsSubmitting(false);
     }
   };
+
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-950 p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full bg-zinc-900 border border-white/10 rounded-[40px] p-8 shadow-2xl space-y-8 text-center"
+        >
+          <div className="p-4 bg-emerald-500/10 rounded-2xl w-fit mx-auto mb-4">
+            <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+          </div>
+          <h1 className="text-3xl font-black text-white">Instalasi Berhasil!</h1>
+          <p className="text-zinc-400 text-sm font-medium">Ini adalah detail akun Super Admin Anda. Harap simpan dengan baik.</p>
+          
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 space-y-4 text-left">
+            <div>
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Nama Website</p>
+              <p className="text-white font-medium">{webName}</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Admin Name</p>
+              <p className="text-white font-medium">{adminName}</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Email</p>
+              <p className="text-white font-medium">{adminEmail}</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Password</p>
+              <p className="text-white font-medium">{adminPassword}</p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => onComplete()}
+            className="w-full py-4 bg-emerald-500 text-zinc-950 font-black rounded-2xl hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+          >
+            Lanjut ke Dashboard
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-zinc-950 p-4">
