@@ -18,7 +18,7 @@ export default function ForgotPassword({ webName = '', logoUrl }: { webName?: st
 
     try {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: 'https://portalskor.net/reset-password',
       });
 
       if (resetError) throw resetError;

@@ -156,21 +156,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    let timer: any;
-    if (loading || isInstalled === null) {
-      timer = setTimeout(() => {
-        const btnContainer = document.getElementById('loader-container');
-        if (btnContainer && !document.getElementById('reset-btn')) {
-          const btn = document.createElement('a');
-          btn.id = 'reset-btn';
-          btn.href = '/reset-install';
-          btn.innerText = 'Reset Instalasi';
-          btn.className = 'mt-4 px-4 py-2 bg-zinc-800 text-white rounded-xl text-sm font-bold border border-white/10 hover:bg-zinc-700';
-          btnContainer.appendChild(btn);
-        }
-      }, 5000);
-    }
-    return () => clearTimeout(timer);
+    // We don't dynamically append the reset install button anymore to avoid pop ups.
   }, [loading, isInstalled]);
 
   if (window.location.pathname === '/reset-install') {

@@ -1,19 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { supabaseService } from '../services/supabaseService';
 import { Trophy, Globe, ShieldCheck, Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 export default function Login({ webName, logoUrl }: { webName: string, logoUrl?: string }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('verified') === 'true') {
+      setSuccessMsg('Selamat, akun Anda telah berhasil diverifikasi. Silakan login, pastikan email dan password sesuai dengan database.');
+      // Force sign out just in case Supabase auto-logged them in
+      supabase.auth.signOut().catch(() => {});
+      // Clean up URL without triggering reload
+      window.history.replaceState({}, '', '/login');
+    }
+
+    // Check hash for Supabase error (like expired token)
+    const hash = window.location.hash.substring(1);
+    if (hash) {
+      const hashParams = new URLSearchParams(hash);
+      if (hashParams.get('error')) {
+        const errorDesc = hashParams.get('error_description');
+        setError(errorDesc ? decodeURIComponent(errorDesc).replace(/\+/g, ' ') : 'Terjadi kesalahan autentikasi.');
+        window.history.replaceState({}, '', '/login');
+      }
+    }
+  }, [location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +55,8 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
           email,
           password,
           options: {
-            data: { username }
+            data: { username },
+            emailRedirectTo: 'https://portalskor.net/login?verified=true'
           }
         });
 
@@ -240,6 +265,16 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
                 />
               </div>
             </div>
+
+            {successMsg && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-4 rounded-xl text-sm font-medium"
+              >
+                {successMsg}
+              </motion.div>
+            )}
 
             {error && (
               <motion.p
