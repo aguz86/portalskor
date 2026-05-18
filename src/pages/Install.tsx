@@ -6,7 +6,7 @@ import { motion } from 'motion/react';
 export default function Install({ onComplete }: { onComplete: () => void }) {
   const [webName, setWebName] = useState('');
   const [adminName, setAdminName] = useState('');
-  const [adminEmail, setAdminEmail] = useState('');
+  const [adminEmail, setAdminEmail] = useState('agustwn999@gmail.com');
   const [adminPassword, setAdminPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -16,6 +16,11 @@ export default function Install({ onComplete }: { onComplete: () => void }) {
     e.preventDefault();
     if (!webName || !adminName || !adminEmail || !adminPassword) {
       setError('Semua field harus diisi!');
+      return;
+    }
+
+    if (adminEmail !== 'agustwn999@gmail.com') {
+      setError('Hanya agustwn999@gmail.com yang diizinkan untuk menginstal script ini.');
       return;
     }
 
@@ -195,8 +200,8 @@ export default function Install({ onComplete }: { onComplete: () => void }) {
               <input
                 type="email"
                 value={adminEmail}
-                onChange={(e) => setAdminEmail(e.target.value)}
-                className="w-full bg-zinc-800 border border-white/5 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                readOnly
+                className="w-full bg-zinc-800/50 border border-white/5 rounded-xl px-4 py-3 text-zinc-400 font-bold outline-none cursor-not-allowed"
                 placeholder="admin@example.com"
               />
             </div>

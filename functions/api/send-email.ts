@@ -7,7 +7,7 @@ interface Env {
   RESEND_API_KEY: string;
 }
 
-export async function onRequestPost(context: EventContext<Env, any, any>) {
+export async function onRequestPost(context: any) {
   try {
     const { request, env } = context;
     const body = await request.json() as { to: string; subject: string; html: string };

@@ -227,6 +227,7 @@ export default function App() {
             <Route path="/reset-password" element={<ResetPassword webName={webName} logoUrl={appConfig?.logoUrl} />} />
             <Route path="/" element={user ? <Home user={user} webName={webName} /> : <Navigate to="/login" />} />
             <Route path="/admin" element={user?.role === 'admin' ? <Admin webName={webName} /> : <Navigate to="/admin/login" />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
 
