@@ -99,6 +99,30 @@ export default function App() {
                 setUser(profile);
                 setLoading(false);
                 return;
+              } else {
+                // Profile missing but Auth successful. Create profile!
+                const config = await supabaseService.getConfig();
+                const adminEmail = config?.adminEmail || '';
+                const role = session.user.email === adminEmail ? 'admin' : 'user';
+                const username = (session.user.user_metadata?.username || session.user.email?.split('@')[0] || 'User').replace(/[^a-zA-Z0-9]/g, '').slice(0, 8);
+                
+                const newProfile = {
+                  uid: session.user.id,
+                  username,
+                  email: session.user.email || '',
+                  role,
+                  balance: 0
+                };
+
+                const { error: profileError } = await supabase
+                  .from('users')
+                  .insert([newProfile]);
+                  
+                if (!profileError) {
+                   setUser(newProfile as UserProfile);
+                   setLoading(false);
+                   return;
+                }
               }
             }
           } catch (e) {

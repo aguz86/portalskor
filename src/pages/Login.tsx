@@ -23,7 +23,10 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
     try {
       if (isRegistering) {
         if (!username.trim()) throw new Error('Username wajib diisi');
-        
+        if (!/^[a-zA-Z0-9]{1,8}$/.test(username.trim())) {
+          throw new Error('Username maksimal 8 karakter tanpa spasi, hanya huruf dan angka.');
+        }
+
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
@@ -39,7 +42,7 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
           throw signUpError;
         }
 
-        if (!signUpData.user) throw new Error('Gagal membuat akun');
+        if (!signUpData.user) throw new Error('Gagal membuat akun. Pastikan email belum terdaftar sebelumnya.');
 
         // Fetch config for role
         const config = await supabaseService.getConfig();
@@ -74,7 +77,7 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
       else if (err.status === 400) {
         if (err.message?.toLowerCase().includes('confirm')) {
           setError('Email belum dikonfirmasi. Silakan cek kotak masuk email Anda atau hubungi admin untuk menonaktifkan konfirmasi email di Supabase.');
-        } else if (isSignUp) {
+        } else if (isRegistering) {
           setError(err.message || 'Gagal membuat akun.');
         } else {
           setError('Email atau password salah');
@@ -198,10 +201,12 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       placeholder="Masukkan username"
+                      maxLength={8}
                       className="w-full bg-zinc-950 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
                       required
                     />
                   </div>
+                  <p className="text-xs text-zinc-500 ml-1">Maks. 8 karakter, huruf & angka tanpa spasi.</p>
                 </motion.div>
               )}
             </AnimatePresence>

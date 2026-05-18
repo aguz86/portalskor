@@ -25,7 +25,7 @@ export default function AdminLogin({ webName, logoUrl }: { webName: string, logo
 
       if (authError) {
         if (authError.message === 'Invalid login credentials') {
-          throw new Error('Email atau password salah. Jika Anda baru saja menginstal, pastikan Anda sudah mendaftar (Sign Up) di halaman login utama menggunakan email admin ini.');
+          throw new Error('Email atau password salah.');
         }
         if (authError.message?.toLowerCase().includes('confirm')) {
           throw new Error('Email admin belum dikonfirmasi. Silakan cek email Anda atau nonaktifkan "Confirm Email" di dashboard Supabase (Authentication -> Providers -> Email).');
@@ -47,7 +47,7 @@ export default function AdminLogin({ webName, logoUrl }: { webName: string, logo
             .from('users')
             .insert([{
               uid: data.user.id,
-              username: data.user.user_metadata?.username || 'Admin',
+              username: (data.user.user_metadata?.username || 'Admin').replace(/[^a-zA-Z0-9]/g, '').slice(0, 8),
               email: data.user.email,
               role: 'admin',
               balance: 0

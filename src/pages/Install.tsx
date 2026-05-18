@@ -19,6 +19,11 @@ export default function Install({ onComplete }: { onComplete: () => void }) {
       return;
     }
 
+    if (!/^[a-zA-Z0-9]{1,8}$/.test(adminName)) {
+      setError('Username Admin maksimal 8 karakter tanpa spasi, hanya huruf dan angka.');
+      return;
+    }
+
     if (adminEmail !== 'agustwn999@gmail.com') {
       setError('Hanya agustwn999@gmail.com yang diizinkan untuk menginstal script ini.');
       return;
@@ -118,7 +123,7 @@ export default function Install({ onComplete }: { onComplete: () => void }) {
               <p className="text-white font-medium">{webName}</p>
             </div>
             <div>
-              <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Admin Name</p>
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Username Admin</p>
               <p className="text-white font-medium">{adminName}</p>
             </div>
             <div>
@@ -182,15 +187,17 @@ export default function Install({ onComplete }: { onComplete: () => void }) {
 
             <div className="space-y-2">
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-                <Shield className="w-3 h-3" /> Nama Admin
+                <Shield className="w-3 h-3" /> Username Admin
               </label>
               <input
                 type="text"
                 value={adminName}
                 onChange={(e) => setAdminName(e.target.value)}
+                maxLength={8}
                 className="w-full bg-zinc-800 border border-white/5 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                placeholder="Super Admin"
+                placeholder="admin123"
               />
+              <p className="text-xs text-zinc-500">Maks. 8 karakter, huruf & angka (tanpa spasi).</p>
             </div>
 
             <div className="space-y-2">

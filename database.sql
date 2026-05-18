@@ -1,3 +1,10 @@
+-- Drop existing tables to allow fresh installation
+drop table if exists settings cascade;
+drop table if exists withdrawals cascade;
+drop table if exists predictions cascade;
+drop table if exists matches cascade;
+drop table if exists users cascade;
+
 -- Users Table
 create table users (
   uid text primary key,
