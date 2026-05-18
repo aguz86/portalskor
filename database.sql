@@ -47,6 +47,7 @@ create table withdrawals (
   id uuid default gen_random_uuid() primary key,
   userid text references users(uid),
   amount bigint not null,
+  wallet text not null,
   status text check (status in ('pending', 'approved', 'rejected')) default 'pending',
   created_at timestamp with time zone default timezone('utc'::text, now())
 );

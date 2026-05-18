@@ -27,6 +27,9 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
       // Clean up URL without triggering reload
       window.history.replaceState({}, '', '/login');
     }
+    if (params.get('register') === 'true') {
+      setIsRegistering(true);
+    }
 
     // Check hash for Supabase error (like expired token)
     const hash = window.location.hash.substring(1);

@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
 import AdminLogin from './pages/AdminLogin';
+import Landing from './pages/Landing';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Install from './pages/Install';
@@ -229,18 +230,16 @@ export default function App() {
           </nav>
         )}
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Routes>
-            <Route path="/login" element={!user ? <Login webName={webName} logoUrl={appConfig?.logoUrl} /> : <Navigate to={user.role === 'admin' ? "/admin" : "/user"} />} />
-            <Route path="/admin/login" element={!user ? <AdminLogin webName={webName} logoUrl={appConfig?.logoUrl} /> : (user.role === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/user" />)} />
-            <Route path="/forgot-password" element={<ForgotPassword webName={webName} logoUrl={appConfig?.logoUrl} />} />
-            <Route path="/reset-password" element={<ResetPassword webName={webName} logoUrl={appConfig?.logoUrl} />} />
-            <Route path="/" element={<Navigate to={user ? (user.role === 'admin' ? '/admin' : '/user') : '/login'} replace />} />
-            <Route path="/user" element={user && (!user.role || user.role === 'user') ? <Home user={user} webName={webName} /> : <Navigate to={user?.role === 'admin' ? "/admin" : "/login"} />} />
-            <Route path="/admin" element={user?.role === 'admin' ? <Admin webName={webName} /> : <Navigate to="/admin/login" />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </main>
+        <Routes>
+          <Route path="/" element={<Landing webName={webName} logoUrl={appConfig?.logoUrl} appConfig={appConfig} user={user} />} />
+          <Route path="/login" element={!user ? <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><Login webName={webName} logoUrl={appConfig?.logoUrl} /></main> : <Navigate to={user.role === 'admin' ? "/admin" : "/user"} />} />
+          <Route path="/admin/login" element={!user ? <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><AdminLogin webName={webName} logoUrl={appConfig?.logoUrl} /></main> : (user.role === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/user" />)} />
+          <Route path="/forgot-password" element={<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><ForgotPassword webName={webName} logoUrl={appConfig?.logoUrl} /></main>} />
+          <Route path="/reset-password" element={<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><ResetPassword webName={webName} logoUrl={appConfig?.logoUrl} /></main>} />
+          <Route path="/user" element={user && (!user.role || user.role === 'user') ? <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><Home user={user} webName={webName} /></main> : <Navigate to={user?.role === 'admin' ? "/admin" : "/login"} />} />
+          <Route path="/admin" element={user?.role === 'admin' ? <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><Admin webName={webName} /></main> : <Navigate to="/admin/login" />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
 
         {user && (!user.role || user.role === 'user') && (
           <footer className="border-t border-white/5 py-8 mt-12 bg-zinc-900/10">

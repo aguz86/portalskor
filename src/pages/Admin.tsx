@@ -1,9 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabase';
-import { supabaseService } from '../services/supabaseService';
-import { Match, Prediction, Withdrawal, UserProfile } from '../types';
-import { Plus, Check, X, Shield, Users, Trophy, Wallet, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useState, useEffect } from "react";
+import { supabase } from "../supabase";
+import { supabaseService } from "../services/supabaseService";
+import { emailService } from "../services/emailService";
+import { Match, Prediction, Withdrawal, UserProfile } from "../types";
+import {
+  Plus,
+  Check,
+  X,
+  Shield,
+  Users,
+  Trophy,
+  Wallet,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
 export default function Admin({ webName }: { webName: string }) {
   const [matches, setMatches] = useState<Match[]>([]);
@@ -11,30 +22,38 @@ export default function Admin({ webName }: { webName: string }) {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [config, setConfig] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'matches' | 'withdrawals' | 'users' | 'settings' | 'supabase'>('matches');
-  const [supabaseStatus, setSupabaseStatus] = useState<'checking' | 'connected' | 'error'>('checking');
-  
+  const [activeTab, setActiveTab] = useState<
+    "matches" | "withdrawals" | "users" | "settings" | "supabase"
+  >("matches");
+  const [supabaseStatus, setSupabaseStatus] = useState<
+    "checking" | "connected" | "error"
+  >("checking");
+
   // Form states
-  const [newTeamA, setNewTeamA] = useState('');
-  const [newLogoA, setNewLogoA] = useState('');
-  const [newTeamB, setNewTeamB] = useState('');
-  const [newLogoB, setNewLogoB] = useState('');
-  const [newDeadline, setNewDeadline] = useState('');
+  const [newTeamA, setNewTeamA] = useState("");
+  const [newLogoA, setNewLogoA] = useState("");
+  const [newTeamB, setNewTeamB] = useState("");
+  const [newLogoB, setNewLogoB] = useState("");
+  const [newDeadline, setNewDeadline] = useState("");
   const [newTotalPrize, setNewTotalPrize] = useState(50000);
   const [newWinnerCount, setNewWinnerCount] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const fetchData = async () => {
     try {
-      const [matchesRes, predictionsRes, withdrawalsRes, usersRes, configRes] = await Promise.all([
-        supabaseService.getAllMatches(),
-        supabaseService.getAllPredictions(),
-        supabaseService.getAllWithdrawals(),
-        supabaseService.getAllUsers(),
-        supabaseService.getConfig()
-      ]);
+      const [matchesRes, predictionsRes, withdrawalsRes, usersRes, configRes] =
+        await Promise.all([
+          supabaseService.getAllMatches(),
+          supabaseService.getAllPredictions(),
+          supabaseService.getAllWithdrawals(),
+          supabaseService.getAllUsers(),
+          supabaseService.getConfig(),
+        ]);
 
       setMatches(matchesRes);
       setPredictions(predictionsRes);
@@ -42,7 +61,7 @@ export default function Admin({ webName }: { webName: string }) {
       setUsers(usersRes);
       setConfig(configRes);
     } catch (error) {
-      console.error('Error fetching admin data:', error);
+      console.error("Error fetching admin data:", error);
     }
   };
 
@@ -52,36 +71,55 @@ export default function Admin({ webName }: { webName: string }) {
     // Check Supabase status
     const checkSupabase = async () => {
       try {
-        if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
-          setSupabaseStatus('connected');
+        if (
+          import.meta.env.VITE_SUPABASE_URL &&
+          import.meta.env.VITE_SUPABASE_ANON_KEY
+        ) {
+          setSupabaseStatus("connected");
         } else {
-          setSupabaseStatus('error');
+          setSupabaseStatus("error");
         }
       } catch (e) {
-        setSupabaseStatus('error');
+        setSupabaseStatus("error");
       }
     };
     checkSupabase();
 
     // Real-time subscriptions with Supabase
     const matchesSub = supabase
-      .channel('admin_matches')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, fetchData)
+      .channel("admin_matches")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "matches" },
+        fetchData,
+      )
       .subscribe();
 
     const predictionsSub = supabase
-      .channel('admin_predictions')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'predictions' }, fetchData)
+      .channel("admin_predictions")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "predictions" },
+        fetchData,
+      )
       .subscribe();
 
     const withdrawalsSub = supabase
-      .channel('admin_withdrawals')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'withdrawals' }, fetchData)
+      .channel("admin_withdrawals")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "withdrawals" },
+        fetchData,
+      )
       .subscribe();
 
     const usersSub = supabase
-      .channel('admin_users')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, fetchData)
+      .channel("admin_users")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "users" },
+        fetchData,
+      )
       .subscribe();
 
     return () => {
@@ -102,38 +140,71 @@ export default function Admin({ webName }: { webName: string }) {
         logoA: newLogoA || `https://picsum.photos/seed/${newTeamA}/100/100`,
         teamB: newTeamB,
         logoB: newLogoB || `https://picsum.photos/seed/${newTeamB}/100/100`,
-        status: 'open',
+        status: "open",
         deadline: new Date(newDeadline).toISOString(),
         totalPrize: newTotalPrize,
         winnerCount: newWinnerCount,
       });
       if (success) {
-        setNewTeamA('');
-        setNewLogoA('');
-        setNewTeamB('');
-        setNewLogoB('');
-        setNewDeadline('');
-        setMessage({ type: 'success', text: 'Match created successfully!' });
+        // Send email notification to all users asynchronously
+        const teamAToEmail = newTeamA;
+        const teamBToEmail = newTeamB;
+        const prizeToEmail = newTotalPrize;
+        supabaseService.getAllUsers().then((users) => {
+          const userEmails = users.map((u: any) => u.email).filter(Boolean);
+          if (userEmails.length > 0) {
+            emailService.sendEmail(
+              userEmails[0], // Pass the first email as "to"
+              "Pertandingan Baru Telah Dibuka!",
+              `
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background-color: #09090b; color: #f4f4f5; padding: 20px; border-radius: 12px; border: 1px solid #27272a;">
+                  <h2 style="color: #10b981; margin-bottom: 20px;">Halo!</h2>
+                  <p>Pertandingan baru antara <strong>${teamAToEmail}</strong> dan <strong>${teamBToEmail}</strong> telah dibuat. Anda dapat mengirimkan tebakan Anda sekarang dengan total hadiah <strong>Rp ${prizeToEmail.toLocaleString()}</strong>.</p>
+                  <p>Yuk tebak skor pertandingan sekarang!</p>
+                  <a href="https://portalskor.net" style="display: inline-block; padding: 12px 24px; background-color: #10b981; color: #09090b; font-weight: bold; text-decoration: none; border-radius: 8px; margin-top: 10px;">Buka Portal Skor</a>
+                </div>
+              `,
+              userEmails.slice(1), // Send the rest as BCC
+            );
+          }
+        });
+
+        setNewTeamA("");
+        setNewLogoA("");
+        setNewTeamB("");
+        setNewLogoB("");
+        setNewDeadline("");
+        setMessage({ type: "success", text: "Match created successfully!" });
       } else {
         throw new Error();
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to create match.' });
+      setMessage({ type: "error", text: "Failed to create match." });
     } finally {
       setIsSubmitting(false);
       setTimeout(() => setMessage(null), 3000);
     }
   };
 
-  const handleSettleMatch = async (match: Match, resA: number, resB: number) => {
+  const handleSettleMatch = async (
+    match: Match,
+    resA: number,
+    resB: number,
+  ) => {
     setIsSubmitting(true);
     try {
       // Update match status and result
-      await supabaseService.updateMatch(match.id, { status: 'closed', resultA: resA, resultB: resB });
+      await supabaseService.updateMatch(match.id, {
+        status: "closed",
+        resultA: resA,
+        resultB: resB,
+      });
 
       // Find all predictions for this match
-      const allPredictions = await supabaseService.getMatchPredictions(match.id);
-      
+      const allPredictions = await supabaseService.getMatchPredictions(
+        match.id,
+      );
+
       // Sort by accuracy
       const sortedPredictions = allPredictions.sort((a, b) => {
         const accA = Math.abs(a.scoreA - resA) + Math.abs(a.scoreB - resB);
@@ -146,40 +217,87 @@ export default function Admin({ webName }: { webName: string }) {
 
       // Update predictions and users
       await Promise.all([
-        ...allPredictions.map(pred => 
-          supabaseService.updatePrediction(pred.id, { status: winners.some(w => w.id === pred.id) ? 'won' : 'lost' })
+        ...allPredictions.map((pred) =>
+          supabaseService.updatePrediction(pred.id, {
+            status: winners.some((w) => w.id === pred.id) ? "won" : "lost",
+          }),
         ),
         ...winners.map(async (winner) => {
-          const userProfile = await supabaseService.getUserProfile(winner.userId);
+          const userProfile = await supabaseService.getUserProfile(
+            winner.userId,
+          );
           const currentBalance = userProfile?.balance || 0;
-          return supabaseService.updateUserBalance(winner.userId, currentBalance + prizePerWinner);
-        })
+          return supabaseService.updateUserBalance(
+            winner.userId,
+            currentBalance + prizePerWinner,
+          );
+        }),
       ]);
 
-      setMessage({ type: 'success', text: `Match settled! ${winners.length} winners rewarded.` });
+      // Provide notification for winners asynchronously
+      const winnersUserIds = winners.map((w) => w.userId);
+      const teamAToEmail = match.teamA;
+      const teamBToEmail = match.teamB;
+      if (winnersUserIds.length > 0) {
+        supabaseService.getAllUsers().then((users) => {
+          const winnerEmails = users
+            .filter((u: any) => winnersUserIds.includes(u.uid))
+            .map((u: any) => u.email)
+            .filter(Boolean);
+          if (winnerEmails.length > 0) {
+            emailService.sendEmail(
+              winnerEmails[0], // First email
+              "Selamat! Anda Memenangkan Tebak Skor",
+              `
+                    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background-color: #09090b; color: #f4f4f5; padding: 20px; border-radius: 12px; border: 1px solid #27272a;">
+                      <h2 style="color: #10b981; margin-bottom: 20px;">Selamat!</h2>
+                      <p>Tebakan skor Anda untuk pertandingan <strong>${teamAToEmail} vs ${teamBToEmail}</strong> terbukti tepat atau paling akurat!</p>
+                      <p>Anda mendapatkan hadiah saldo sebesar <strong>Rp ${prizePerWinner.toLocaleString()}</strong>.</p>
+                      <p>Silakan masuk ke akun Anda untuk mengecek saldo.</p>
+                      <a href="https://portalskor.net/user" style="display: inline-block; padding: 12px 24px; background-color: #10b981; color: #09090b; font-weight: bold; text-decoration: none; border-radius: 8px; margin-top: 10px;">Cek Saldo Sekarang</a>
+                    </div>
+                  `,
+              winnerEmails.slice(1), // Rest as BCC
+            );
+          }
+        });
+      }
+
+      setMessage({
+        type: "success",
+        text: `Match settled! ${winners.length} winners rewarded.`,
+      });
     } catch (error) {
       console.error(error);
-      setMessage({ type: 'error', text: 'Failed to settle match.' });
+      setMessage({ type: "error", text: "Failed to settle match." });
     } finally {
       setIsSubmitting(false);
       setTimeout(() => setMessage(null), 3000);
     }
   };
 
-  const handleWithdrawalAction = async (withdrawal: Withdrawal, status: 'approved' | 'rejected') => {
+  const handleWithdrawalAction = async (
+    withdrawal: Withdrawal,
+    status: "approved" | "rejected",
+  ) => {
     setIsSubmitting(true);
     try {
       await supabaseService.updateWithdrawal(withdrawal.id, { status });
 
-      if (status === 'approved') {
-        const userProfile = await supabaseService.getUserProfile(withdrawal.userId);
+      if (status === "approved") {
+        const userProfile = await supabaseService.getUserProfile(
+          withdrawal.userId,
+        );
         const currentBalance = userProfile?.balance || 0;
-        await supabaseService.updateUserBalance(withdrawal.userId, Math.max(0, currentBalance - withdrawal.amount));
+        await supabaseService.updateUserBalance(
+          withdrawal.userId,
+          Math.max(0, currentBalance - withdrawal.amount),
+        );
       }
 
-      setMessage({ type: 'success', text: `Withdrawal ${status}!` });
+      setMessage({ type: "success", text: `Withdrawal ${status}!` });
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to update withdrawal.' });
+      setMessage({ type: "error", text: "Failed to update withdrawal." });
     } finally {
       setIsSubmitting(false);
       setTimeout(() => setMessage(null), 3000);
@@ -193,19 +311,19 @@ export default function Admin({ webName }: { webName: string }) {
       const formData = new FormData(e.currentTarget);
       const newConfig = {
         ...config,
-        webName: formData.get('webName'),
-        logoUrl: formData.get('logoUrl'),
-        facebookUrl: formData.get('facebookUrl'),
-        instagramUrl: formData.get('instagramUrl'),
-        tiktokUrl: formData.get('tiktokUrl'),
-        youtubeUrl: formData.get('youtubeUrl'),
+        webName: formData.get("webName"),
+        logoUrl: formData.get("logoUrl"),
+        facebookUrl: formData.get("facebookUrl"),
+        instagramUrl: formData.get("instagramUrl"),
+        tiktokUrl: formData.get("tiktokUrl"),
+        youtubeUrl: formData.get("youtubeUrl"),
       };
       await supabaseService.saveConfig(newConfig);
       setConfig(newConfig);
-      setMessage({ type: 'success', text: 'Pengaturan berhasil disimpan!' });
+      setMessage({ type: "success", text: "Pengaturan berhasil disimpan!" });
     } catch (err) {
       console.error(err);
-      setMessage({ type: 'error', text: 'Gagal menyimpan pengaturan.' });
+      setMessage({ type: "error", text: "Gagal menyimpan pengaturan." });
     } finally {
       setIsSavingConfig(false);
       setTimeout(() => setMessage(null), 3000);
@@ -216,18 +334,24 @@ export default function Admin({ webName }: { webName: string }) {
     <div className="space-y-8 max-w-6xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="space-y-1">
-          <h2 className="text-3xl font-black text-white tracking-tight">Admin <span className="text-blue-500">Panel</span></h2>
-          <p className="text-zinc-500 font-medium">Manajemen pertandingan dan penarikan hadiah.</p>
+          <h2 className="text-3xl font-black text-white tracking-tight">
+            Admin <span className="text-blue-500">Panel</span>
+          </h2>
+          <p className="text-zinc-500 font-medium">
+            Manajemen pertandingan dan penarikan hadiah.
+          </p>
         </div>
         <div className="flex gap-2 p-1 bg-zinc-900/50 rounded-2xl border border-white/5 flex-wrap">
-          {(['matches', 'withdrawals', 'users', 'settings', 'supabase'] as const).map((tab) => (
+          {(
+            ["matches", "withdrawals", "users", "settings", "supabase"] as const
+          ).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                activeTab === tab 
-                ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' 
-                : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                activeTab === tab
+                  ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20"
+                  : "text-zinc-400 hover:text-white hover:bg-white/5"
               }`}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -243,10 +367,16 @@ export default function Admin({ webName }: { webName: string }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             className={`p-4 rounded-2xl flex items-center gap-3 font-bold text-sm ${
-              message.type === 'success' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'
+              message.type === "success"
+                ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                : "bg-red-500/10 text-red-500 border border-red-500/20"
             }`}
           >
-            {message.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+            {message.type === "success" ? (
+              <CheckCircle2 className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
             {message.text}
           </motion.div>
         )}
@@ -258,7 +388,7 @@ export default function Admin({ webName }: { webName: string }) {
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3 }}
       >
-        {activeTab === 'matches' && (
+        {activeTab === "matches" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-6">
               <div className="bg-zinc-900/50 border border-white/5 rounded-3xl p-6 space-y-6">
@@ -269,7 +399,9 @@ export default function Admin({ webName }: { webName: string }) {
                 <form onSubmit={handleCreateMatch} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Team A</label>
+                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                        Team A
+                      </label>
                       <input
                         type="text"
                         value={newTeamA}
@@ -279,7 +411,9 @@ export default function Admin({ webName }: { webName: string }) {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Logo A (URL)</label>
+                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                        Logo A (URL)
+                      </label>
                       <input
                         type="text"
                         value={newLogoA}
@@ -291,7 +425,9 @@ export default function Admin({ webName }: { webName: string }) {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Team B</label>
+                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                        Team B
+                      </label>
                       <input
                         type="text"
                         value={newTeamB}
@@ -301,7 +437,9 @@ export default function Admin({ webName }: { webName: string }) {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Logo B (URL)</label>
+                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                        Logo B (URL)
+                      </label>
                       <input
                         type="text"
                         value={newLogoB}
@@ -312,7 +450,9 @@ export default function Admin({ webName }: { webName: string }) {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Deadline</label>
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                      Deadline
+                    </label>
                     <input
                       type="datetime-local"
                       value={newDeadline}
@@ -322,20 +462,28 @@ export default function Admin({ webName }: { webName: string }) {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Total Prize</label>
+                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                        Total Prize
+                      </label>
                       <input
                         type="number"
                         value={newTotalPrize}
-                        onChange={(e) => setNewTotalPrize(Number(e.target.value))}
+                        onChange={(e) =>
+                          setNewTotalPrize(Number(e.target.value))
+                        }
                         className="w-full bg-zinc-800 border border-white/5 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Winner Count</label>
+                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                        Winner Count
+                      </label>
                       <input
                         type="number"
                         value={newWinnerCount}
-                        onChange={(e) => setNewWinnerCount(Number(e.target.value))}
+                        onChange={(e) =>
+                          setNewWinnerCount(Number(e.target.value))
+                        }
                         className="w-full bg-zinc-800 border border-white/5 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                       />
                     </div>
@@ -352,47 +500,80 @@ export default function Admin({ webName }: { webName: string }) {
             </div>
 
             <div className="lg:col-span-2 space-y-4">
-              <h3 className="text-sm font-bold text-white px-2">Daftar Pertandingan</h3>
+              <h3 className="text-sm font-bold text-white px-2">
+                Daftar Pertandingan
+              </h3>
               <div className="grid grid-cols-1 gap-4">
                 {matches.map((match) => (
-                  <div key={match.id} className="bg-zinc-900/50 border border-white/5 rounded-3xl p-6 space-y-6">
+                  <div
+                    key={match.id}
+                    className="bg-zinc-900/50 border border-white/5 rounded-3xl p-6 space-y-6"
+                  >
                     <div className="flex justify-between items-center">
-                      <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full border ${
-                        match.status === 'open' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-zinc-800 text-zinc-500 border-white/5'
-                      }`}>
+                      <span
+                        className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full border ${
+                          match.status === "open"
+                            ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                            : "bg-zinc-800 text-zinc-500 border-white/5"
+                        }`}
+                      >
                         {match.status}
                       </span>
-                      <p className="text-xs text-zinc-500 font-bold">ID: {match.id.slice(0, 8)}</p>
+                      <p className="text-xs text-zinc-500 font-bold">
+                        ID: {match.id.slice(0, 8)}
+                      </p>
                     </div>
 
                     <div className="flex items-center justify-center gap-8">
                       <div className="text-center flex-1 space-y-2">
                         <div className="w-12 h-12 bg-zinc-800 rounded-xl mx-auto flex items-center justify-center ring-1 ring-white/5 overflow-hidden">
                           {match.logoA ? (
-                            <img src={match.logoA} alt={match.teamA} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                            <img
+                              src={match.logoA}
+                              alt={match.teamA}
+                              className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
                           ) : (
-                            <span className="text-xl font-black text-zinc-500">{match.teamA[0]}</span>
+                            <span className="text-xl font-black text-zinc-500">
+                              {match.teamA[0]}
+                            </span>
                           )}
                         </div>
-                        <p className="text-sm font-black text-white truncate">{match.teamA}</p>
+                        <p className="text-sm font-black text-white truncate">
+                          {match.teamA}
+                        </p>
                       </div>
-                      <div className="text-2xl font-black text-zinc-700 italic">VS</div>
+                      <div className="text-2xl font-black text-zinc-700 italic">
+                        VS
+                      </div>
                       <div className="text-center flex-1 space-y-2">
                         <div className="w-12 h-12 bg-zinc-800 rounded-xl mx-auto flex items-center justify-center ring-1 ring-white/5 overflow-hidden">
                           {match.logoB ? (
-                            <img src={match.logoB} alt={match.teamB} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                            <img
+                              src={match.logoB}
+                              alt={match.teamB}
+                              className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
                           ) : (
-                            <span className="text-xl font-black text-zinc-500">{match.teamB[0]}</span>
+                            <span className="text-xl font-black text-zinc-500">
+                              {match.teamB[0]}
+                            </span>
                           )}
                         </div>
-                        <p className="text-sm font-black text-white truncate">{match.teamB}</p>
+                        <p className="text-sm font-black text-white truncate">
+                          {match.teamB}
+                        </p>
                       </div>
                     </div>
 
-                    {match.status === 'open' ? (
+                    {match.status === "open" ? (
                       <div className="flex items-center gap-4 pt-4 border-t border-white/5">
                         <div className="flex-1 space-y-2">
-                          <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">Hasil Akhir</p>
+                          <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">
+                            Hasil Akhir
+                          </p>
                           <div className="flex items-center gap-2">
                             <input
                               type="number"
@@ -411,8 +592,20 @@ export default function Admin({ webName }: { webName: string }) {
                         </div>
                         <button
                           onClick={() => {
-                            const resA = Number((document.getElementById(`resA-${match.id}`) as HTMLInputElement).value);
-                            const resB = Number((document.getElementById(`resB-${match.id}`) as HTMLInputElement).value);
+                            const resA = Number(
+                              (
+                                document.getElementById(
+                                  `resA-${match.id}`,
+                                ) as HTMLInputElement
+                              ).value,
+                            );
+                            const resB = Number(
+                              (
+                                document.getElementById(
+                                  `resB-${match.id}`,
+                                ) as HTMLInputElement
+                              ).value,
+                            );
                             handleSettleMatch(match, resA, resB);
                           }}
                           className="px-6 py-3 bg-white text-zinc-950 font-black rounded-xl hover:bg-zinc-200 transition-all mt-6"
@@ -422,7 +615,12 @@ export default function Admin({ webName }: { webName: string }) {
                       </div>
                     ) : (
                       <div className="text-center pt-4 border-t border-white/5">
-                        <p className="text-sm font-bold text-zinc-500">Hasil Akhir: <span className="text-white">{match.resultA} - {match.resultB}</span></p>
+                        <p className="text-sm font-bold text-zinc-500">
+                          Hasil Akhir:{" "}
+                          <span className="text-white">
+                            {match.resultA} - {match.resultB}
+                          </span>
+                        </p>
                       </div>
                     )}
                   </div>
@@ -432,81 +630,117 @@ export default function Admin({ webName }: { webName: string }) {
           </div>
         )}
 
-        {activeTab === 'withdrawals' && (
+        {activeTab === "withdrawals" && (
           <div className="space-y-4">
-            <h3 className="text-sm font-bold text-white px-2">Permintaan Penarikan</h3>
-            {withdrawals.filter(w => w.status === 'pending').length > 0 ? withdrawals.filter(w => w.status === 'pending').map((w) => {
-              const user = users.find(u => u.uid === w.userId);
-              return (
-                <div key={w.id} className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                  <div className="flex items-center gap-4">
-                    <div className="p-4 bg-zinc-800 rounded-2xl text-blue-500">
-                      <Wallet className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="text-lg font-black text-white">Rp {w.amount.toLocaleString()}</p>
-                      <p className="text-sm font-bold text-zinc-500">{user?.username} ({user?.email})</p>
-                      <p className="text-xs font-mono text-zinc-400 mt-1">Wallet: {w.wallet}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => handleWithdrawalAction(w, 'rejected')}
-                      className="px-6 py-3 bg-zinc-800 text-red-500 font-black rounded-xl hover:bg-red-500/10 transition-all flex items-center gap-2"
+            <h3 className="text-sm font-bold text-white px-2">
+              Permintaan Penarikan
+            </h3>
+            {withdrawals.filter((w) => w.status === "pending").length > 0 ? (
+              withdrawals
+                .filter((w) => w.status === "pending")
+                .map((w) => {
+                  const user = users.find((u) => u.uid === w.userId);
+                  return (
+                    <div
+                      key={w.id}
+                      className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6"
                     >
-                      <X className="w-4 h-4" /> Tolak
-                    </button>
-                    <button
-                      onClick={() => handleWithdrawalAction(w, 'approved')}
-                      className="px-6 py-3 bg-emerald-500 text-zinc-950 font-black rounded-xl hover:bg-emerald-400 transition-all flex items-center gap-2 shadow-lg shadow-emerald-500/20"
-                    >
-                      <Check className="w-4 h-4" /> Setujui
-                    </button>
-                  </div>
-                </div>
-              );
-            }) : (
+                      <div className="flex items-center gap-4">
+                        <div className="p-4 bg-zinc-800 rounded-2xl text-blue-500">
+                          <Wallet className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <p className="text-lg font-black text-white">
+                            Rp {w.amount.toLocaleString()}
+                          </p>
+                          <p className="text-sm font-bold text-zinc-500">
+                            {user?.username} ({user?.email})
+                          </p>
+                          <p className="text-xs font-mono text-zinc-400 mt-1">
+                            Wallet: {w.wallet}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => handleWithdrawalAction(w, "rejected")}
+                          className="px-6 py-3 bg-zinc-800 text-red-500 font-black rounded-xl hover:bg-red-500/10 transition-all flex items-center gap-2"
+                        >
+                          <X className="w-4 h-4" /> Tolak
+                        </button>
+                        <button
+                          onClick={() => handleWithdrawalAction(w, "approved")}
+                          className="px-6 py-3 bg-emerald-500 text-zinc-950 font-black rounded-xl hover:bg-emerald-400 transition-all flex items-center gap-2 shadow-lg shadow-emerald-500/20"
+                        >
+                          <Check className="w-4 h-4" /> Setujui
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+            ) : (
               <div className="py-20 text-center space-y-4 bg-zinc-900/30 rounded-3xl border border-dashed border-white/5">
-                <p className="text-zinc-500 font-bold">Tidak ada permintaan penarikan pending.</p>
+                <p className="text-zinc-500 font-bold">
+                  Tidak ada permintaan penarikan pending.
+                </p>
               </div>
             )}
           </div>
         )}
 
-        {activeTab === 'users' && (
+        {activeTab === "users" && (
           <div className="bg-zinc-900/50 border border-white/5 rounded-3xl overflow-hidden">
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-white/5 bg-white/5">
-                  <th className="px-6 py-4 text-xs font-black text-zinc-500 uppercase tracking-widest">User</th>
-                  <th className="px-6 py-4 text-xs font-black text-zinc-500 uppercase tracking-widest">Role</th>
-                  <th className="px-6 py-4 text-xs font-black text-zinc-500 uppercase tracking-widest">Saldo</th>
-                  <th className="px-6 py-4 text-xs font-black text-zinc-500 uppercase tracking-widest text-right">Aksi</th>
+                  <th className="px-6 py-4 text-xs font-black text-zinc-500 uppercase tracking-widest">
+                    User
+                  </th>
+                  <th className="px-6 py-4 text-xs font-black text-zinc-500 uppercase tracking-widest">
+                    Role
+                  </th>
+                  <th className="px-6 py-4 text-xs font-black text-zinc-500 uppercase tracking-widest">
+                    Saldo
+                  </th>
+                  <th className="px-6 py-4 text-xs font-black text-zinc-500 uppercase tracking-widest text-right">
+                    Aksi
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {users.map((u) => (
-                  <tr key={u.uid} className="hover:bg-white/5 transition-colors">
+                  <tr
+                    key={u.uid}
+                    className="hover:bg-white/5 transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-zinc-800 rounded-xl flex items-center justify-center font-black text-zinc-500">
                           {u.username[0]}
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-white">{u.username}</p>
+                          <p className="text-sm font-bold text-white">
+                            {u.username}
+                          </p>
                           <p className="text-xs text-zinc-500">{u.email}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${
-                        u.role === 'admin' ? 'bg-blue-500/10 text-blue-500' : 'bg-zinc-800 text-zinc-500'
-                      }`}>
+                      <span
+                        className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${
+                          u.role === "admin"
+                            ? "bg-blue-500/10 text-blue-500"
+                            : "bg-zinc-800 text-zinc-500"
+                        }`}
+                      >
                         {u.role}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm font-black text-emerald-500">Rp {u.balance.toLocaleString()}</p>
+                      <p className="text-sm font-black text-emerald-500">
+                        Rp {u.balance.toLocaleString()}
+                      </p>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button className="p-2 text-zinc-500 hover:text-white transition-colors">
@@ -520,55 +754,72 @@ export default function Admin({ webName }: { webName: string }) {
           </div>
         )}
 
-        {activeTab === 'settings' && (
-          <form onSubmit={handleSaveSettings} className="space-y-6 bg-zinc-900/50 p-6 md:p-8 rounded-3xl border border-white/5">
-            <h3 className="text-xl font-bold text-white mb-6">Pengaturan Website</h3>
+        {activeTab === "settings" && (
+          <form
+            onSubmit={handleSaveSettings}
+            className="space-y-6 bg-zinc-900/50 p-6 md:p-8 rounded-3xl border border-white/5"
+          >
+            <h3 className="text-xl font-bold text-white mb-6">
+              Pengaturan Website
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-sm font-bold text-zinc-400">Nama Website</label>
+                <label className="text-sm font-bold text-zinc-400">
+                  Nama Website
+                </label>
                 <input
                   name="webName"
-                  defaultValue={config?.webName || ''}
+                  defaultValue={config?.webName || ""}
                   className="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white font-medium"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-zinc-400">Logo URL</label>
+                <label className="text-sm font-bold text-zinc-400">
+                  Logo URL
+                </label>
                 <input
                   name="logoUrl"
-                  defaultValue={config?.logoUrl || ''}
+                  defaultValue={config?.logoUrl || ""}
                   className="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white font-medium"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-zinc-400">Facebook URL</label>
+                <label className="text-sm font-bold text-zinc-400">
+                  Facebook URL
+                </label>
                 <input
                   name="facebookUrl"
-                  defaultValue={config?.facebookUrl || ''}
+                  defaultValue={config?.facebookUrl || ""}
                   className="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white font-medium"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-zinc-400">Instagram URL</label>
+                <label className="text-sm font-bold text-zinc-400">
+                  Instagram URL
+                </label>
                 <input
                   name="instagramUrl"
-                  defaultValue={config?.instagramUrl || ''}
+                  defaultValue={config?.instagramUrl || ""}
                   className="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white font-medium"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-zinc-400">TikTok URL</label>
+                <label className="text-sm font-bold text-zinc-400">
+                  TikTok URL
+                </label>
                 <input
                   name="tiktokUrl"
-                  defaultValue={config?.tiktokUrl || ''}
+                  defaultValue={config?.tiktokUrl || ""}
                   className="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white font-medium"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-zinc-400">YouTube URL</label>
+                <label className="text-sm font-bold text-zinc-400">
+                  YouTube URL
+                </label>
                 <input
                   name="youtubeUrl"
-                  defaultValue={config?.youtubeUrl || ''}
+                  defaultValue={config?.youtubeUrl || ""}
                   className="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white font-medium"
                 />
               </div>
@@ -579,40 +830,65 @@ export default function Admin({ webName }: { webName: string }) {
                 disabled={isSavingConfig}
                 className="px-8 py-3 bg-emerald-500 text-zinc-950 font-black rounded-xl hover:bg-emerald-400 transition-all flex items-center gap-2"
               >
-                {isSavingConfig ? 'Menyimpan...' : 'Simpan Pengaturan'}
+                {isSavingConfig ? "Menyimpan..." : "Simpan Pengaturan"}
               </button>
             </div>
           </form>
         )}
 
-        {activeTab === 'supabase' && (
+        {activeTab === "supabase" && (
           <div className="space-y-6">
             <div className="bg-zinc-900/50 border border-white/5 rounded-3xl p-8 space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <h3 className="text-xl font-black text-white">Supabase <span className="text-emerald-500">Integration</span></h3>
-                  <p className="text-zinc-500 text-sm font-medium">Status koneksi dan konfigurasi database Supabase.</p>
+                  <h3 className="text-xl font-black text-white">
+                    Supabase{" "}
+                    <span className="text-emerald-500">Integration</span>
+                  </h3>
+                  <p className="text-zinc-500 text-sm font-medium">
+                    Status koneksi dan konfigurasi database Supabase.
+                  </p>
                 </div>
-                <div className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                  supabaseStatus === 'connected' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
-                  supabaseStatus === 'error' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
-                  'bg-zinc-800 text-zinc-500 border-white/5'
-                }`}>
-                  {supabaseStatus === 'connected' ? 'Connected' : supabaseStatus === 'error' ? 'Not Configured' : 'Checking...'}
+                <div
+                  className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                    supabaseStatus === "connected"
+                      ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                      : supabaseStatus === "error"
+                        ? "bg-red-500/10 text-red-500 border-red-500/20"
+                        : "bg-zinc-800 text-zinc-500 border-white/5"
+                  }`}
+                >
+                  {supabaseStatus === "connected"
+                    ? "Connected"
+                    : supabaseStatus === "error"
+                      ? "Not Configured"
+                      : "Checking..."}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-zinc-800/50 rounded-2xl p-6 space-y-4">
-                  <h4 className="text-sm font-bold text-white">Environment Variables</h4>
+                  <h4 className="text-sm font-bold text-white">
+                    Environment Variables
+                  </h4>
                   <div className="space-y-3">
                     <div className="p-3 bg-zinc-900 rounded-xl border border-white/5">
-                      <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Supabase URL</p>
-                      <p className="text-xs font-mono text-zinc-300 truncate">{import.meta.env.VITE_SUPABASE_URL || 'Not Set'}</p>
+                      <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">
+                        Supabase URL
+                      </p>
+                      <p className="text-xs font-mono text-zinc-300 truncate">
+                        {import.meta.env.VITE_SUPABASE_URL || "Not Set"}
+                      </p>
                     </div>
                     <div className="p-3 bg-zinc-900 rounded-xl border border-white/5">
-                      <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Supabase Anon Key</p>
-                      <p className="text-xs font-mono text-zinc-300 truncate">{import.meta.env.VITE_SUPABASE_ANON_KEY ? '••••••••••••••••' : 'Not Set'}</p>
+                      <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">
+                        Supabase Anon Key
+                      </p>
+                      <p className="text-xs font-mono text-zinc-300 truncate">
+                        {import.meta.env.VITE_SUPABASE_ANON_KEY
+                          ? "••••••••••••••••"
+                          : "Not Set"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -620,13 +896,16 @@ export default function Admin({ webName }: { webName: string }) {
                 <div className="bg-zinc-800/50 rounded-2xl p-6 space-y-4">
                   <h4 className="text-sm font-bold text-white">Quick Start</h4>
                   <p className="text-xs text-zinc-400 leading-relaxed">
-                    Untuk menggunakan Supabase, pastikan Anda telah membuat tabel berikut di dashboard Supabase Anda:
+                    Untuk menggunakan Supabase, pastikan Anda telah membuat
+                    tabel berikut di dashboard Supabase Anda:
                     <code className="block mt-2 p-3 bg-zinc-900 rounded-lg text-emerald-400 font-mono text-[10px]">
                       users, matches, predictions, withdrawals
                     </code>
                   </p>
-                  <button 
-                    onClick={() => window.open('https://supabase.com/dashboard', '_blank')}
+                  <button
+                    onClick={() =>
+                      window.open("https://supabase.com/dashboard", "_blank")
+                    }
                     className="w-full py-3 bg-emerald-500 text-zinc-950 font-black rounded-xl hover:bg-emerald-400 transition-all text-sm"
                   >
                     Buka Dashboard Supabase
@@ -635,9 +914,11 @@ export default function Admin({ webName }: { webName: string }) {
               </div>
 
               <div className="space-y-4">
-                <h4 className="text-sm font-bold text-white">SQL Schema (Copy to SQL Editor)</h4>
+                <h4 className="text-sm font-bold text-white">
+                  SQL Schema (Copy to SQL Editor)
+                </h4>
                 <pre className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-[10px] text-zinc-400 font-mono overflow-x-auto">
-{`-- 1. Create Tables
+                  {`-- 1. Create Tables
 create table users (
   uid text primary key,
   username text not null,
