@@ -78,7 +78,7 @@ export default function Landing({ webName, logoUrl, appConfig, user }: LandingPr
         <nav className="border-b border-white/5 bg-zinc-900/50 backdrop-blur-xl sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16 items-center">
-              <Link to="/" className="flex items-center gap-3 group">
+              <a href="https://portalskor.net" className="flex items-center gap-3 group">
                 {logoUrl ? (
                   <img src={logoUrl} alt={webName} className="h-8 max-w-[150px] object-contain" />
                 ) : (
@@ -87,7 +87,7 @@ export default function Landing({ webName, logoUrl, appConfig, user }: LandingPr
                   </div>
                 )}
                 {!logoUrl && <span className="font-bold text-xl tracking-tight text-white">{webName}</span>}
-              </Link>
+              </a>
               
               <div className="flex items-center gap-4">
                 <Link
@@ -306,6 +306,15 @@ export default function Landing({ webName, logoUrl, appConfig, user }: LandingPr
           ))}
         </div>
       </section>
+
+      {/* Promotional Banner */}
+      {appConfig?.bannerImageUrl && appConfig?.bannerLinkUrl && (
+        <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 relative z-10">
+          <a href={appConfig.bannerLinkUrl} target="_blank" rel="noopener noreferrer" className="block w-full overflow-hidden rounded-2xl border border-white/10 hover:border-emerald-500/50 transition-colors group">
+            <img src={appConfig.bannerImageUrl} alt="Promosi" className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500" />
+          </a>
+        </section>
+      )}
     </div>
   );
 }

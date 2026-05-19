@@ -20,6 +20,7 @@ export interface Match {
   deadline: any;
   totalPrize: number;
   winnerCount: number;
+  prizeDistribution?: 'rata' | 'proporsional';
   created_at?: any;
 }
 

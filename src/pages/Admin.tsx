@@ -37,6 +37,7 @@ export default function Admin({ webName }: { webName: string }) {
   const [newDeadline, setNewDeadline] = useState("");
   const [newTotalPrize, setNewTotalPrize] = useState(50000);
   const [newWinnerCount, setNewWinnerCount] = useState(1);
+  const [newPrizeDistribution, setNewPrizeDistribution] = useState<"rata" | "proporsional">("rata");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [message, setMessage] = useState<{
@@ -144,6 +145,7 @@ export default function Admin({ webName }: { webName: string }) {
         deadline: new Date(newDeadline).toISOString(),
         totalPrize: newTotalPrize,
         winnerCount: newWinnerCount,
+        prizeDistribution: newPrizeDistribution,
       });
       if (success) {
         // Send email notification to all users asynchronously
@@ -213,7 +215,15 @@ export default function Admin({ webName }: { webName: string }) {
       });
 
       const winners = sortedPredictions.slice(0, match.winnerCount);
-      const prizePerWinner = Math.floor(match.totalPrize / winners.length);
+      let prizePerWinner = 0;
+      if (winners.length > 0) {
+        if (match.prizeDistribution === "proporsional") {
+          prizePerWinner = Math.floor(match.totalPrize / match.winnerCount);
+        } else {
+          // rata / prorata: all total prize divided among actual winners
+          prizePerWinner = Math.floor(match.totalPrize / winners.length);
+        }
+      }
 
       // Update predictions and users
       await Promise.all([
@@ -317,6 +327,8 @@ export default function Admin({ webName }: { webName: string }) {
         instagramUrl: formData.get("instagramUrl"),
         tiktokUrl: formData.get("tiktokUrl"),
         youtubeUrl: formData.get("youtubeUrl"),
+        bannerImageUrl: formData.get("bannerImageUrl"),
+        bannerLinkUrl: formData.get("bannerLinkUrl"),
       };
       await supabaseService.saveConfig(newConfig);
       setConfig(newConfig);
@@ -460,7 +472,7 @@ export default function Admin({ webName }: { webName: string }) {
                       className="w-full bg-zinc-800 border border-white/5 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
                         Total Prize
@@ -486,6 +498,19 @@ export default function Admin({ webName }: { webName: string }) {
                         }
                         className="w-full bg-zinc-800 border border-white/5 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                       />
+                    </div>
+                    <div className="space-y-2 col-span-2 md:col-span-1">
+                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                        Pembagian Hadiah
+                      </label>
+                      <select
+                        value={newPrizeDistribution}
+                        onChange={(e) => setNewPrizeDistribution(e.target.value as "rata" | "proporsional")}
+                        className="w-full bg-zinc-800 border border-white/5 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
+                      >
+                        <option value="rata">Prorata (Bagi Rata ke Pemenang)</option>
+                        <option value="proporsional">Proporsional (Sesuai Kuota)</option>
+                      </select>
                     </div>
                   </div>
                   <button
@@ -824,6 +849,33 @@ export default function Admin({ webName }: { webName: string }) {
                 />
               </div>
             </div>
+            
+            <h4 className="text-lg font-bold text-white mb-4 mt-8 pb-2 border-b border-white/5">Banner Promosi</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-zinc-400">
+                  Sumber Banner (Image URL)
+                </label>
+                <input
+                  name="bannerImageUrl"
+                  defaultValue={config?.bannerImageUrl || ""}
+                  placeholder="https://example.com/banner.jpg"
+                  className="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white font-medium"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-zinc-400">
+                  Anchor Banner (Link/URL saat diklik)
+                </label>
+                <input
+                  name="bannerLinkUrl"
+                  defaultValue={config?.bannerLinkUrl || ""}
+                  placeholder="https://example.com"
+                  className="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white font-medium"
+                />
+              </div>
+            </div>
+
             <div className="pt-4 border-t border-white/5 flex justify-end">
               <button
                 type="submit"

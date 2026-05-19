@@ -29,6 +29,7 @@ create table matches (
   deadline timestamp with time zone not null,
   totalprize bigint default 50000,
   winnercount int default 1,
+  prizedistribution text check (prizedistribution in ('rata', 'proporsional')) default 'rata',
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
@@ -74,6 +75,8 @@ create table settings (
   instagram_url text,
   tiktok_url text,
   youtube_url text,
+  banner_image_url text,
+  banner_link_url text,
   isinstalled boolean default true,
   installedat timestamp with time zone default timezone('utc'::text, now())
 );
