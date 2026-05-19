@@ -59,7 +59,7 @@ export default function AdminLogin({ webName, logoUrl }: { webName: string, logo
         }
 
         if (userProfile && userProfile.role === 'admin') {
-          window.location.reload();
+          window.location.href = '/admin';
         } else {
           await supabase.auth.signOut();
           throw new Error('Akses ditolak. Anda bukan administrator.');

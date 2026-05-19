@@ -50,10 +50,15 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
 
     try {
       if (isRegistering) {
-        // Prevent admin email from creating a regular user account
+        // Prevent registration if system is not installed
         const config = await supabaseService.getConfig();
+        if (!config || !config.isInstalled) {
+          throw new Error('Pendaftaran pengguna baru sedang ditutup. Script belum diinstall atau dikonfigurasi oleh Administrator.');
+        }
+
+        // Prevent admin email from creating a regular user account
         if (config?.adminEmail && email.toLowerCase() === config.adminEmail.toLowerCase()) {
-          throw new Error('Email ini tidak dapat didaftarkan sebagai pengguna.');
+          throw new Error('Email ini tidak dapat didaftarkan sebagai pengguna biasa.');
         }
 
         if (!username.trim()) throw new Error('Username wajib diisi');
@@ -105,7 +110,7 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
         if (signInError) throw signInError;
       }
       
-      window.location.reload();
+      window.location.href = '/user';
     } catch (err: any) {
       console.error('Auth error:', err);
       if (err.code === '23505') setError('Email sudah terdaftar');
@@ -125,12 +130,41 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
   };
 
   return (
-    <div className="min-h-[80vh] flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Decorative background elements */}
-      <div className="absolute top-1/4 -left-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-[100px] -z-10" />
-      <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-blue-500/10 rounded-full blur-[100px] -z-10" />
+    <div className="min-h-[80vh] flex flex-col relative overflow-hidden">
+      {/* Header */}
+      <div className="w-full flex justify-between items-center py-4 px-2 mb-8 border-b border-white/10">
+        <a href="https://portalskor.net" className="flex items-center gap-3 group">
+          {logoUrl ? (
+            <img src={logoUrl} alt={webName} className="h-8 max-w-[150px] object-contain" />
+          ) : (
+            <div className="p-2 bg-emerald-500/10 rounded-lg group-hover:bg-emerald-500/20 transition-colors">
+              <Trophy className="w-5 h-5 text-emerald-500" />
+            </div>
+          )}
+          {!logoUrl && <span className="font-bold text-xl tracking-tight text-white">{webName}</span>}
+        </a>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsRegistering(false)}
+            className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${!isRegistering ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white'}`}
+          >
+            Masuk
+          </button>
+          <button
+            onClick={() => setIsRegistering(true)}
+            className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${isRegistering ? 'bg-emerald-500 text-zinc-950' : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20'}`}
+          >
+            Daftar
+          </button>
+        </div>
+      </div>
 
-      {showRegistrationSuccess ? (
+      <div className="flex flex-col items-center justify-center flex-1">
+        {/* Decorative background elements */}
+        <div className="absolute top-1/4 -left-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-[100px] -z-10" />
+        <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-blue-500/10 rounded-full blur-[100px] -z-10" />
+
+        {showRegistrationSuccess ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -326,6 +360,7 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
         </p>
       </motion.div>
       )}
+      </div>
 
       {/* Verified Popup */}
       <AnimatePresence>
