@@ -4,6 +4,7 @@ drop table if exists withdrawals cascade;
 drop table if exists predictions cascade;
 drop table if exists matches cascade;
 drop table if exists users cascade;
+drop table if exists otps cascade;
 
 -- Users Table
 create table users (
@@ -52,6 +53,16 @@ create table withdrawals (
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
+-- OTPs Table
+create table otps (
+  id uuid default gen_random_uuid() primary key,
+  email text not null,
+  code text not null,
+  expires_at timestamp with time zone not null,
+  used boolean default false,
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
 -- Settings Table
 create table settings (
   id text primary key default 'config',
@@ -74,6 +85,7 @@ alter table users enable row level security;
 alter table matches enable row level security;
 alter table predictions enable row level security;
 alter table withdrawals enable row level security;
+alter table otps enable row level security;
 alter table settings enable row level security;
 
 -- Users Policies
@@ -103,6 +115,9 @@ create policy "Users can insert own withdrawals." on withdrawals for insert with
 create policy "Admins can manage withdrawals." on withdrawals for all using (
   exists (select 1 from users where uid = auth.uid()::text and role = 'admin')
 );
+
+-- OTPs Policies
+create policy "OTPs are viewable and manageable by everyone." on otps for all using (true);
 
 -- Settings Policies
 create policy "Settings are viewable by everyone." on settings for select using (true);

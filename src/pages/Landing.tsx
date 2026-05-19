@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Match, UserProfile, Prediction } from '../types';
 import { supabaseService } from '../services/supabaseService';
-import { Trophy, Clock, Search, LogIn, UserPlus, Crown } from 'lucide-react';
+import { Trophy, Clock, Search, LogIn, UserPlus, Crown, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -268,6 +268,44 @@ export default function Landing({ webName, logoUrl, appConfig, user }: LandingPr
           </div>
         )}
       </main>
+
+      {/* FAQ Section */}
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-black text-white mb-4">Pertanyaan yang Sering Diajukan</h2>
+          <p className="text-zinc-500 font-medium">Masih bingung? Temukan jawabannya di sini.</p>
+        </div>
+        <div className="space-y-4">
+          {[
+            {
+              q: "Bagaimana cara ikut menebak skor?",
+              a: "Anda harus mendaftar dan masuk ke akun Anda. Setelah itu, pilih pertandingan yang statusnya 'Terbuka' dan masukkan tebakan skor Anda sebelum waktu kick-off.",
+            },
+            {
+              q: "Apakah berbayar untuk ikut bermain?",
+              a: "Tidak, pendaftaran dan partisipasi dalam tebak skor di Portal Skor sepenuhnya gratis.",
+            },
+            {
+              q: "Bagaimana cara mencairkan hadiah?",
+              a: "Jika tebakan Anda akurat, Anda akan mendapatkan saldo hadiah. Anda dapat menarik saldo tersebut ke dompet digital (wallet) Anda melalui menu dasbor dengan memasukkan kode OTP yang dikirim ke email.",
+            },
+            {
+              q: "Siapa yang menang jika tebakan benar ada banyak?",
+              a: "Hadiah akan dibagi rata kepada seluruh penebak yang benar. Jika tidak ada yang benar-benar akurat, maka tidak ada pemenang yang diundi (atau sesuai kebijakan admin).",
+            }
+          ].map((faq, idx) => (
+            <details key={idx} className="group bg-zinc-900/50 border border-white/5 rounded-2xl overflow-hidden px-6 py-4 cursor-pointer hover:border-emerald-500/30 transition-colors">
+              <summary className="flex justify-between items-center font-bold text-white outline-none">
+                {faq.q}
+                <ChevronDown className="w-5 h-5 text-zinc-500 group-open:rotate-180 transition-transform" />
+              </summary>
+              <p className="mt-4 text-zinc-400 font-medium leading-relaxed">
+                {faq.a}
+              </p>
+            </details>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

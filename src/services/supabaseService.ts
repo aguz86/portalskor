@@ -298,6 +298,53 @@ export const supabaseService = {
     return true;
   },
 
+  // OTPs
+  async createOtp(email: string, code: string): Promise<boolean> {
+    const expires_at = new Date();
+    expires_at.setMinutes(expires_at.getMinutes() + 10); // Valid for 10 minutes
+    const { error } = await supabase
+      .from('otps')
+      .insert([{
+        email,
+        code,
+        expires_at: expires_at.toISOString()
+      }]);
+    
+    if (error) {
+      console.error('Error creating OTP:', error);
+      return false;
+    }
+    return true;
+  },
+
+  async verifyOtp(email: string, code: string): Promise<boolean> {
+    const { data: otps, error } = await supabase
+      .from('otps')
+      .select('*')
+      .eq('email', email)
+      .eq('code', code)
+      .eq('used', false)
+      .gte('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (error) {
+      console.error('Error verifying OTP:', error);
+      return false;
+    }
+
+    if (otps && otps.length > 0) {
+      // Mark as used
+      await supabase
+        .from('otps')
+        .update({ used: true })
+        .eq('id', otps[0].id);
+      return true;
+    }
+
+    return false;
+  },
+
   // Users
   async getAllUsers(): Promise<UserProfile[]> {
     const { data, error } = await supabase

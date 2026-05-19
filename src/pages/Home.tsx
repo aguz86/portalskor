@@ -3,6 +3,7 @@ import { supabase } from '../supabase';
 import { supabaseService } from '../services/supabaseService';
 import { Match, Prediction, UserProfile, Withdrawal } from '../types';
 import { Trophy, Calendar, Send, Wallet, History, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
+import { emailService } from '../services/emailService';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface HomeProps {
@@ -20,6 +21,9 @@ export default function Home({ user, webName }: HomeProps) {
   const [scoreB, setScoreB] = useState<number>(0);
   const [withdrawAmountStr, setWithdrawAmountStr] = useState<string>('');
   const [withdrawWallet, setWithdrawWallet] = useState<string>('');
+  const [showOtp, setShowOtp] = useState<boolean>(false);
+  const [otpCode, setOtpCode] = useState<string>('');
+  const [otpSubmitting, setOtpSubmitting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -91,7 +95,7 @@ export default function Home({ user, webName }: HomeProps) {
     }
   };
 
-  const handleWithdraw = async () => {
+  const handleWithdrawRequest = async () => {
     const withdrawAmount = parseInt(withdrawAmountStr.replace(/\./g, '')) || 0;
     if (withdrawAmount <= 0 || withdrawAmount > user.balance) {
       setMessage({ type: 'error', text: 'Saldo tidak mencukupi atau jumlah tidak valid.' });
@@ -103,6 +107,48 @@ export default function Home({ user, webName }: HomeProps) {
     }
     setIsSubmitting(true);
     try {
+      // Generate 6-digit OTP
+      const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const saved = await supabaseService.createOtp(user.email, newCode);
+      if (!saved) throw new Error("Gagal membuat OTP");
+      
+      await emailService.sendEmail(
+        user.email,
+        'Kode OTP Penarikan Anda',
+        `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background-color: #09090b; color: #f4f4f5; padding: 20px; border-radius: 12px; border: 1px solid #27272a;">
+          <h2 style="color: #10b981; margin-bottom: 20px;">Permintaan Penarikan</h2>
+          <p>Anda sedang melakukan permintaan penarikan saldo sebesar <strong>Rp ${withdrawAmount.toLocaleString()}</strong>.</p>
+          <p>Kode OTP Anda adalah: <strong style="font-size: 24px; color: #10b981; display: inline-block; padding: 10px; background: #27272a; border-radius: 8px;">${newCode}</strong></p>
+          <p style="color: #a1a1aa; font-size: 14px;">Kode ini berlaku selama 10 menit. Jangan bagikan kepada siapa pun.</p>
+        </div>
+        `
+      );
+      
+      setShowOtp(true);
+      setMessage({ type: 'success', text: 'Kode OTP 6-digit telah dikirim ke email Anda.' });
+    } catch (e) {
+      setMessage({ type: 'error', text: 'Gagal mengirim OTP.' });
+    } finally {
+      setIsSubmitting(false);
+      setTimeout(() => setMessage(null), 5000);
+    }
+  };
+
+  const handleWithdrawConfirm = async () => {
+    if (otpCode.length !== 6) {
+      setMessage({ type: 'error', text: 'Kode OTP harus 6 digit.' });
+      return;
+    }
+    setOtpSubmitting(true);
+    try {
+      const valid = await supabaseService.verifyOtp(user.email, otpCode);
+      if (!valid) {
+        setMessage({ type: 'error', text: 'Kode OTP tidak valid atau sudah kedaluwarsa.' });
+        return;
+      }
+      
+      const withdrawAmount = parseInt(withdrawAmountStr.replace(/\./g, '')) || 0;
       const success = await supabaseService.createWithdrawal({
         userId: user.uid,
         amount: withdrawAmount,
@@ -110,17 +156,22 @@ export default function Home({ user, webName }: HomeProps) {
         status: 'pending',
       });
       if (success) {
-        setMessage({ type: 'success', text: 'Permintaan penarikan dikirim!' });
+        setMessage({ type: 'success', text: 'Permintaan penarikan berhasil dikirim!' });
         setWithdrawAmountStr('');
         setWithdrawWallet('');
+        setShowOtp(false);
+        setOtpCode('');
+        
+        // Refresh balance (optimistic)
+        user.balance -= withdrawAmount;
       } else {
         throw new Error();
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'Gagal mengirim permintaan penarikan.' });
     } finally {
-      setIsSubmitting(false);
-      setTimeout(() => setMessage(null), 3000);
+      setOtpSubmitting(false);
+      setTimeout(() => setMessage(null), 5000);
     }
   };
 
@@ -335,14 +386,47 @@ export default function Home({ user, webName }: HomeProps) {
                     <p className="text-[10px] text-zinc-500 font-medium">Format: J diikuti 5 angka (misal: J12345)</p>
                   </div>
                 </div>
-                <button
-                  onClick={handleWithdraw}
-                  disabled={isSubmitting || !withdrawAmountStr || withdrawWallet.length !== 6}
-                  className="w-full py-4 bg-white text-zinc-950 font-black rounded-xl hover:bg-zinc-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
-                >
-                  <Send className="w-4 h-4" />
-                  Tarik Hadiah
-                </button>
+                {!showOtp ? (
+                  <button
+                    onClick={handleWithdrawRequest}
+                    disabled={isSubmitting || !withdrawAmountStr || withdrawWallet.length !== 6}
+                    className="w-full py-4 bg-white text-zinc-950 font-black rounded-xl hover:bg-zinc-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
+                  >
+                    <Send className="w-4 h-4" />
+                    Minta Kode OTP
+                  </button>
+                ) : (
+                  <div className="mt-4 p-4 border border-emerald-500/30 rounded-xl bg-emerald-500/5 space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-400 uppercase tracking-widest mb-2">Kode OTP (6 Digit)</label>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        value={otpCode}
+                        onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                        className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors font-mono text-center tracking-[0.5em] text-xl"
+                        placeholder="000000"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                       <button
+                         onClick={() => setShowOtp(false)}
+                         disabled={otpSubmitting}
+                         className="flex-1 py-3 bg-zinc-800 text-white font-bold rounded-xl hover:bg-zinc-700 transition-all disabled:opacity-50"
+                       >
+                         Batal
+                       </button>
+                       <button
+                         onClick={handleWithdrawConfirm}
+                         disabled={otpSubmitting || otpCode.length !== 6}
+                         className="flex-1 py-3 bg-emerald-500 text-zinc-950 font-black rounded-xl hover:bg-emerald-400 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                       >
+                         <Send className="w-4 h-4" />
+                         Konfirmasi
+                       </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

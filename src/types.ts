@@ -33,6 +33,15 @@ export interface Prediction {
   created_at?: any;
 }
 
+export interface Otp {
+  id: string;
+  email: string;
+  code: string;
+  expires_at: any;
+  used: boolean;
+  created_at?: any;
+}
+
 export interface Withdrawal {
   id: string;
   userId: string;
