@@ -67,6 +67,15 @@ create table if not exists audit_logs (
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
+create table if not exists otps (
+  id uuid default gen_random_uuid() primary key,
+  email text not null,
+  code text not null,
+  used boolean default false,
+  expires_at timestamp with time zone not null,
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
 -- Ensure table alters for upgrades
 alter table matches add column if not exists prizedistribution text default 'rata';
 alter table settings add column if not exists banner_image_url text;
@@ -79,6 +88,7 @@ alter table predictions enable row level security;
 alter table withdrawals enable row level security;
 alter table settings enable row level security;
 alter table audit_logs enable row level security;
+alter table otps enable row level security;
 
 -- 3. Create Policies
 drop policy if exists "Public profiles are viewable by everyone." on users;
@@ -137,3 +147,12 @@ drop policy if exists "Admins can manage audit logs." on audit_logs;
 create policy "Admins can manage audit logs." on audit_logs for all using (
   exists (select 1 from users where uid = auth.uid()::text and role = 'admin')
 );
+
+drop policy if exists "Anon can insert otps." on otps;
+create policy "Anon can insert otps." on otps for insert with check (true);
+
+drop policy if exists "Anon can select otps." on otps;
+create policy "Anon can select otps." on otps for select using (true);
+
+drop policy if exists "Anon can update otps." on otps;
+create policy "Anon can update otps." on otps for update using (true);

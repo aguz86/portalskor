@@ -3,7 +3,33 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder-project.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+function getStorage() {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      // Test if we can actually use it (throws SecurityError in blocked iframes)
+      window.localStorage.setItem('__storage_test__', '1');
+      window.localStorage.removeItem('__storage_test__');
+      return window.localStorage;
+    }
+  } catch (e) {
+    console.warn('localStorage is not available, falling back to in-memory storage', e);
+  }
+
+  const memoryStorage = new Map<string, string>();
+  
+  return {
+    getItem: (key: string) => memoryStorage.get(key) || null,
+    setItem: (key: string, value: string) => memoryStorage.set(key, value),
+    removeItem: (key: string) => memoryStorage.delete(key),
+  };
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: getStorage(),
+  },
+});
+
 
 /**
  * SQL Schema for Supabase:
