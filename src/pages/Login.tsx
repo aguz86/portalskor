@@ -107,7 +107,8 @@ export default function Login({ webName, logoUrl, isRegisterRoute }: { webName: 
         if (signInError) throw signInError;
       }
       
-      window.location.href = '/user/dashboard';
+      // Let App.tsx onAuthStateChange handle the redirect to avoid race conditions
+      return;
     } catch (err: any) {
       console.error('Auth error:', err);
       if (err.code === '23505') setError('Email sudah terdaftar');

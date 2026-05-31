@@ -59,7 +59,8 @@ export default function AdminLogin({ webName, logoUrl }: { webName: string, logo
         }
 
         if (userProfile && userProfile.role === 'admin') {
-          window.location.href = '/admin';
+          // Let App.tsx onAuthStateChange handle the redirect to avoid race conditions
+          return;
         } else {
           await supabase.auth.signOut();
           throw new Error('Akses ditolak. Anda bukan administrator.');
