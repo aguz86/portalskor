@@ -51,3 +51,11 @@ export interface Withdrawal {
   status: 'pending' | 'approved' | 'rejected';
   created_at?: any;
 }
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  details: string;
+  admin_email: string;
+  created_at?: any;
+}

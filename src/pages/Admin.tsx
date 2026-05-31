@@ -23,8 +23,9 @@ export default function Admin({ webName }: { webName: string }) {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [config, setConfig] = useState<any>(null);
+  const [auditLogs, setAuditLogs] = useState<import("../types").AuditLog[]>([]);
   const [activeTab, setActiveTab] = useState<
-    "matches" | "withdrawals" | "users" | "settings" | "supabase"
+    "matches" | "withdrawals" | "users" | "settings" | "auditLogs" | "supabase"
   >("matches");
   const [supabaseStatus, setSupabaseStatus] = useState<
     "checking" | "connected" | "error"
@@ -50,13 +51,14 @@ export default function Admin({ webName }: { webName: string }) {
 
   const fetchData = async () => {
     try {
-      const [matchesRes, predictionsRes, withdrawalsRes, usersRes, configRes] =
+      const [matchesRes, predictionsRes, withdrawalsRes, usersRes, configRes, auditLogsRes] =
         await Promise.all([
           supabaseService.getAllMatches(),
           supabaseService.getAllPredictions(),
           supabaseService.getAllWithdrawals(),
           supabaseService.getAllUsers(),
           supabaseService.getConfig(),
+          supabaseService.getAuditLogs(),
         ]);
 
       setMatches(matchesRes);
@@ -64,6 +66,7 @@ export default function Admin({ webName }: { webName: string }) {
       setWithdrawals(withdrawalsRes);
       setUsers(usersRes);
       setConfig(configRes);
+      setAuditLogs(auditLogsRes);
     } catch (error) {
       console.error("Error fetching admin data:", error);
     }
@@ -146,7 +149,7 @@ export default function Admin({ webName }: { webName: string }) {
     }
     setIsSubmitting(true);
     try {
-      const success = await supabaseService.createMatch({
+      await supabaseService.createMatch({
         teamA: newTeamA,
         logoA: newLogoA || `https://picsum.photos/seed/${newTeamA}/100/100`,
         teamB: newTeamB,
@@ -157,8 +160,14 @@ export default function Admin({ webName }: { webName: string }) {
         winnerCount: newWinnerCount,
         prizeDistribution: newPrizeDistribution,
       });
-      if (success) {
-        // Send email notification to all users asynchronously
+
+      supabaseService.createAuditLog(
+        "Buat Pertandingan",
+        `Pertandingan: ${newTeamA} vs ${newTeamB}`,
+        config?.adminEmail || "admin"
+      );
+
+      // Send email notification to all users asynchronously
         const teamAToEmail = newTeamA;
         const teamBToEmail = newTeamB;
         const prizeToEmail = Number(newTotalPrize) || 0;
@@ -187,12 +196,11 @@ export default function Admin({ webName }: { webName: string }) {
         setNewLogoB("");
         setNewDeadline("");
         setNewTotalPrize("50000");
+        await fetchData();
         setMessage({ type: "success", text: "Match created successfully!" });
-      } else {
-        throw new Error();
-      }
-    } catch (error) {
-      setMessage({ type: "error", text: "Failed to create match." });
+    } catch (error: any) {
+      console.error(error);
+      setMessage({ type: "error", text: error?.message || "Failed to create match." });
     } finally {
       setIsSubmitting(false);
       setTimeout(() => setMessage(null), 3000);
@@ -284,6 +292,13 @@ export default function Admin({ webName }: { webName: string }) {
         });
       }
 
+      await supabaseService.createAuditLog(
+        "Settle Pertandingan",
+        `Pertandingan: ${match.teamA} vs ${match.teamB} diselesaikan dengan skor ${resultA}-${resultB}.`,
+        config?.adminEmail || "admin"
+      );
+
+      await fetchData();
       setMessage({
         type: "success",
         text: `Match settled! ${winners.length} winners rewarded.`,
@@ -316,6 +331,13 @@ export default function Admin({ webName }: { webName: string }) {
         );
       }
 
+      await supabaseService.createAuditLog(
+        "Update Penarikan",
+        `Status withdraw sejumlah Rp${withdrawal.amount.toLocaleString("id-ID")} diperbarui menjadi ${status}.`,
+        config?.adminEmail || "admin"
+      );
+
+      await fetchData();
       setMessage({ type: "success", text: `Withdrawal ${status}!` });
     } catch (error) {
       setMessage({ type: "error", text: "Failed to update withdrawal." });
@@ -366,7 +388,7 @@ export default function Admin({ webName }: { webName: string }) {
         </div>
         <div className="flex gap-2 p-1 bg-zinc-900/50 rounded-2xl border border-white/5 flex-wrap">
           {(
-            ["matches", "withdrawals", "users", "settings", "supabase"] as const
+            ["matches", "withdrawals", "users", "settings", "auditLogs", "supabase"] as const
           ).map((tab) => (
             <button
               key={tab}
@@ -547,9 +569,16 @@ export default function Admin({ webName }: { webName: string }) {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full py-4 bg-blue-500 text-white font-black rounded-xl hover:bg-blue-400 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                    className="w-full py-4 bg-blue-500 text-white font-black rounded-xl hover:bg-blue-400 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 flex justify-center items-center gap-2"
                   >
-                    Tambah Pertandingan
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                        Menambahkan...
+                      </>
+                    ) : (
+                      "Tambah Pertandingan"
+                    )}
                   </button>
                 </form>
               </div>
@@ -980,6 +1009,60 @@ export default function Admin({ webName }: { webName: string }) {
                 }}
               />
             </label>
+          </div>
+        )}
+
+        {activeTab === "auditLogs" && (
+          <div className="space-y-6">
+            <div className="bg-zinc-900/50 border border-white/5 rounded-3xl p-6 md:p-8 overflow-hidden">
+              <h3 className="text-xl font-bold text-white mb-6">Audit Logs</h3>
+              <div className="overflow-x-auto max-w-full">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-black/40 text-zinc-400 capitalize">
+                    <tr>
+                      <th className="px-4 py-4 rounded-l-xl">Waktu</th>
+                      <th className="px-4 py-4">Aksi</th>
+                      <th className="px-4 py-4">Detail</th>
+                      <th className="px-4 py-4 rounded-r-xl">Admin Email</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {auditLogs.length > 0 ? (
+                      auditLogs.map((log) => (
+                        <tr
+                          key={log.id}
+                          className="hover:bg-white/5 transition-colors"
+                        >
+                          <td className="px-4 py-4 text-zinc-300 font-mono text-xs whitespace-nowrap">
+                            {new Date(log.created_at).toLocaleString("id-ID")}
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="px-3 py-1 bg-blue-500/10 text-blue-500 font-bold rounded-lg text-xs">
+                              {log.action}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-zinc-300 max-w-xs truncate" title={log.details}>
+                            {log.details}
+                          </td>
+                          <td className="px-4 py-4 text-zinc-500 font-mono text-xs whitespace-nowrap">
+                            {log.admin_email}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="px-4 py-12 text-center text-zinc-500"
+                        >
+                          Belum ada aktivitas admin yang dicatat.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 

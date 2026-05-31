@@ -90,7 +90,7 @@ export const supabaseService = {
     
     if (error) {
       console.error('Error creating match in Supabase:', error);
-      return false;
+      throw error;
     }
     return true;
   },
@@ -433,5 +433,41 @@ export const supabaseService = {
       throw new Error(`Supabase Error: ${errorMessage} (${error.code})`);
     }
     return true;
+  },
+
+  // Audit Logs
+  async getAuditLogs(): Promise<import('../types').AuditLog[]> {
+    const { data, error } = await supabase
+      .from('audit_logs')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching audit logs:', error);
+      return [];
+    }
+    return data as import('../types').AuditLog[];
+  },
+
+  async createAuditLog(action: string, details: string, adminEmail: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('audit_logs')
+        .insert([{
+          action,
+          details,
+          admin_email: adminEmail
+        }]);
+
+      if (error) {
+        console.error('Error creating audit log:', error);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      // Ignore if table doesn't exist yet
+      console.error('Error creating audit log:', error);
+      return false;
+    }
   }
 };

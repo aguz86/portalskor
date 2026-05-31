@@ -59,6 +59,14 @@ create table if not exists settings (
   installedat timestamp with time zone default timezone('utc'::text, now())
 );
 
+create table if not exists audit_logs (
+  id uuid default gen_random_uuid() primary key,
+  action text not null,
+  details text,
+  admin_email text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
 -- Ensure table alters for upgrades
 alter table matches add column if not exists prizedistribution text default 'rata';
 alter table settings add column if not exists banner_image_url text;
@@ -70,6 +78,7 @@ alter table matches enable row level security;
 alter table predictions enable row level security;
 alter table withdrawals enable row level security;
 alter table settings enable row level security;
+alter table audit_logs enable row level security;
 
 -- 3. Create Policies
 drop policy if exists "Public profiles are viewable by everyone." on users;
@@ -121,5 +130,10 @@ create policy "Settings are viewable by everyone." on settings for select using 
 
 drop policy if exists "Admins can manage settings." on settings;
 create policy "Admins can manage settings." on settings for all using (
+  exists (select 1 from users where uid = auth.uid()::text and role = 'admin')
+);
+
+drop policy if exists "Admins can manage audit logs." on audit_logs;
+create policy "Admins can manage audit logs." on audit_logs for all using (
   exists (select 1 from users where uid = auth.uid()::text and role = 'admin')
 );

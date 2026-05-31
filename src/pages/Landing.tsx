@@ -135,6 +135,11 @@ export default function Landing({ webName, logoUrl, appConfig, user }: LandingPr
             >
               <Link
                 to="/login?register=true"
+                onClick={(e) => {
+                  e.preventDefault();
+                  alert("Silakan buat akun Portal Skor atau login terlebih dahulu");
+                  window.location.href = "/login?register=true";
+                }}
                 className="inline-flex items-center gap-2 px-8 py-4 bg-white text-zinc-950 font-black rounded-2xl hover:bg-zinc-200 transition-all text-lg shadow-xl"
               >
                 Mulai Bermain Sekarang
