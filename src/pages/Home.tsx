@@ -349,6 +349,8 @@ export default function Home({ user, webName }: HomeProps) {
                     <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Jumlah (IDR)</label>
                     <input
                       type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       value={withdrawAmountStr}
                       disabled={user.balance === 0}
                       onChange={(e) => {

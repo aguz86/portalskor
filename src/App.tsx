@@ -43,6 +43,12 @@ export default function App() {
   const [appConfig, setAppConfig] = useState<any>(null);
 
   useEffect(() => {
+    // Fallback timeout to prevent infinite loading pop-up if Supabase auth hangs
+    const loadingTimeout = setTimeout(() => {
+      setLoading(false);
+      setIsInstalled((prev) => (prev === null ? false : prev));
+    }, 5000);
+
     // Check installation status
     const fetchConfig = async () => {
       if (
@@ -185,6 +191,7 @@ export default function App() {
     checkAuth();
 
     return () => {
+      clearTimeout(loadingTimeout);
       if (configSubscription) configSubscription.unsubscribe();
       if (authSubscription) authSubscription.unsubscribe();
     };
