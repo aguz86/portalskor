@@ -13,6 +13,7 @@ import {
   Wallet,
   AlertCircle,
   CheckCircle2,
+  Upload,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -37,7 +38,9 @@ export default function Admin({ webName }: { webName: string }) {
   const [newDeadline, setNewDeadline] = useState("");
   const [newTotalPrize, setNewTotalPrize] = useState<string>("50000");
   const [newWinnerCount, setNewWinnerCount] = useState(1);
-  const [newPrizeDistribution, setNewPrizeDistribution] = useState<"rata" | "proporsional">("rata");
+  const [newPrizeDistribution, setNewPrizeDistribution] = useState<
+    "rata" | "proporsional"
+  >("rata");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [message, setMessage] = useState<{
@@ -134,7 +137,10 @@ export default function Admin({ webName }: { webName: string }) {
   const handleCreateMatch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTeamA || !newTeamB || !newDeadline) {
-      setMessage({ type: "error", text: "Mohon lengkapi data tim dan deadline." });
+      setMessage({
+        type: "error",
+        text: "Mohon lengkapi data tim dan deadline.",
+      });
       setTimeout(() => setMessage(null), 3000);
       return;
     }
@@ -483,13 +489,21 @@ export default function Admin({ webName }: { webName: string }) {
                         Total Prize
                       </label>
                       <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-zinc-400">Rp</span>
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-zinc-400">
+                          Rp
+                        </span>
                         <input
                           type="text"
-                          value={newTotalPrize === "" ? "" : Number(newTotalPrize).toLocaleString("id-ID")}
+                          value={
+                            newTotalPrize === ""
+                              ? ""
+                              : Number(newTotalPrize).toLocaleString("id-ID")
+                          }
                           onChange={(e) => {
                             const val = e.target.value.replace(/\D/g, "");
-                            setNewTotalPrize(val === "" ? "" : val.replace(/^0+/, "") || "0");
+                            setNewTotalPrize(
+                              val === "" ? "" : val.replace(/^0+/, "") || "0",
+                            );
                           }}
                           className="w-full bg-zinc-800 border border-white/5 rounded-xl pl-12 pr-4 py-3 text-white font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                         />
@@ -514,11 +528,19 @@ export default function Admin({ webName }: { webName: string }) {
                       </label>
                       <select
                         value={newPrizeDistribution}
-                        onChange={(e) => setNewPrizeDistribution(e.target.value as "rata" | "proporsional")}
+                        onChange={(e) =>
+                          setNewPrizeDistribution(
+                            e.target.value as "rata" | "proporsional",
+                          )
+                        }
                         className="w-full bg-zinc-800 border border-white/5 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
                       >
-                        <option value="rata">Prorata (Bagi Rata ke Pemenang)</option>
-                        <option value="proporsional">Proporsional (Sesuai Kuota)</option>
+                        <option value="rata">
+                          Prorata (Bagi Rata ke Pemenang)
+                        </option>
+                        <option value="proporsional">
+                          Proporsional (Sesuai Kuota)
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -570,7 +592,7 @@ export default function Admin({ webName }: { webName: string }) {
                             />
                           ) : (
                             <span className="text-xl font-black text-zinc-500">
-                              {match.teamA?.[0] || '?'}
+                              {match.teamA?.[0] || "?"}
                             </span>
                           )}
                         </div>
@@ -592,7 +614,7 @@ export default function Admin({ webName }: { webName: string }) {
                             />
                           ) : (
                             <span className="text-xl font-black text-zinc-500">
-                              {match.teamB?.[0] || '?'}
+                              {match.teamB?.[0] || "?"}
                             </span>
                           )}
                         </div>
@@ -626,10 +648,22 @@ export default function Admin({ webName }: { webName: string }) {
                         </div>
                         <button
                           onClick={() => {
-                            const inputA = document.getElementById(`resA-${match.id}`) as HTMLInputElement | null;
-                            const inputB = document.getElementById(`resB-${match.id}`) as HTMLInputElement | null;
-                            if (!inputA || !inputB || inputA.value === '' || inputB.value === '') {
-                              setMessage({ type: "error", text: "Mohon isi hasil akhir untuk kedua tim." });
+                            const inputA = document.getElementById(
+                              `resA-${match.id}`,
+                            ) as HTMLInputElement | null;
+                            const inputB = document.getElementById(
+                              `resB-${match.id}`,
+                            ) as HTMLInputElement | null;
+                            if (
+                              !inputA ||
+                              !inputB ||
+                              inputA.value === "" ||
+                              inputB.value === ""
+                            ) {
+                              setMessage({
+                                type: "error",
+                                text: "Mohon isi hasil akhir untuk kedua tim.",
+                              });
                               setTimeout(() => setMessage(null), 3000);
                               return;
                             }
@@ -746,7 +780,7 @@ export default function Admin({ webName }: { webName: string }) {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-zinc-800 rounded-xl flex items-center justify-center font-black text-zinc-500">
-                          {u.username?.[0] || '?'}
+                          {u.username?.[0] || "?"}
                         </div>
                         <div>
                           <p className="text-sm font-bold text-white">
@@ -854,8 +888,10 @@ export default function Admin({ webName }: { webName: string }) {
                 />
               </div>
             </div>
-            
-            <h4 className="text-lg font-bold text-white mb-4 mt-8 pb-2 border-b border-white/5">Banner Promosi</h4>
+
+            <h4 className="text-lg font-bold text-white mb-4 mt-8 pb-2 border-b border-white/5">
+              Banner Promosi
+            </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-bold text-zinc-400">
@@ -891,6 +927,60 @@ export default function Admin({ webName }: { webName: string }) {
               </button>
             </div>
           </form>
+        )}
+
+        {activeTab === "settings" && (
+          <div className="mt-8 bg-black/40 p-6 md:p-8 rounded-3xl border border-red-500/20">
+            <h3 className="text-xl font-bold text-red-500 mb-2">
+              Reset Sistem & Instalasi Ulang
+            </h3>
+            <p className="text-zinc-400 text-sm mb-6">
+              Untuk melakukan instalasi ulang, karena arsitektur modern sistem
+              ini menggunakan proteksi state, file instalasi sudah dihapus
+              otomatis saat selesai. Jika Anda ingin melakukan instalasi ulang,
+              Anda perlu "mengunggah ualng" script <code>install.tsx</code>. Ini
+              akan menghapus kunci dari database dan akan mengarahkan Anda ke
+              halaman instalasi awal.
+            </p>
+
+            <label className="inline-flex cursor-pointer items-center gap-3 px-6 py-3 bg-red-500/10 text-red-500 font-bold rounded-xl hover:bg-red-500/20 transition-all border border-red-500/30">
+              <Upload className="w-5 h-5" />
+              Unggah File Instalasi & Reset
+              <input
+                type="file"
+                className="hidden"
+                accept=".jsx,.tsx,.js,.ts,.php"
+                onChange={async (e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    if (
+                      window.confirm(
+                        "Apakah Anda yakin ingin mereset instalasi? Semua pengaturan koneksi Supabase di tabel settings akan dihapus.",
+                      )
+                    ) {
+                      try {
+                        const { error: deleteError } = await supabase
+                          .from("settings")
+                          .delete()
+                          .eq("id", "config");
+
+                        if (deleteError) {
+                          throw new Error(deleteError.message);
+                        }
+
+                        alert(
+                          "Berhasil mengunggah file instalasi dan melakukan reset sistem. Mengarahkan Anda ke halaman Instalasi...",
+                        );
+                        window.location.href = "/install";
+                      } catch (err: any) {
+                        alert(err.message || "Gagal reset.");
+                      }
+                    }
+                    e.target.value = "";
+                  }
+                }}
+              />
+            </label>
+          </div>
         )}
 
         {activeTab === "supabase" && (
