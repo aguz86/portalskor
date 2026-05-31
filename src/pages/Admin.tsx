@@ -35,7 +35,7 @@ export default function Admin({ webName }: { webName: string }) {
   const [newTeamB, setNewTeamB] = useState("");
   const [newLogoB, setNewLogoB] = useState("");
   const [newDeadline, setNewDeadline] = useState("");
-  const [newTotalPrize, setNewTotalPrize] = useState(50000);
+  const [newTotalPrize, setNewTotalPrize] = useState<string>("50000");
   const [newWinnerCount, setNewWinnerCount] = useState(1);
   const [newPrizeDistribution, setNewPrizeDistribution] = useState<"rata" | "proporsional">("rata");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -133,7 +133,11 @@ export default function Admin({ webName }: { webName: string }) {
 
   const handleCreateMatch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTeamA || !newTeamB || !newDeadline) return;
+    if (!newTeamA || !newTeamB || !newDeadline) {
+      setMessage({ type: "error", text: "Mohon lengkapi data tim dan deadline." });
+      setTimeout(() => setMessage(null), 3000);
+      return;
+    }
     setIsSubmitting(true);
     try {
       const success = await supabaseService.createMatch({
@@ -143,7 +147,7 @@ export default function Admin({ webName }: { webName: string }) {
         logoB: newLogoB || `https://picsum.photos/seed/${newTeamB}/100/100`,
         status: "open",
         deadline: new Date(newDeadline).toISOString(),
-        totalPrize: newTotalPrize,
+        totalPrize: Number(newTotalPrize) || 0,
         winnerCount: newWinnerCount,
         prizeDistribution: newPrizeDistribution,
       });
@@ -151,7 +155,7 @@ export default function Admin({ webName }: { webName: string }) {
         // Send email notification to all users asynchronously
         const teamAToEmail = newTeamA;
         const teamBToEmail = newTeamB;
-        const prizeToEmail = newTotalPrize;
+        const prizeToEmail = Number(newTotalPrize) || 0;
         supabaseService.getAllUsers().then((users) => {
           const userEmails = users.map((u: any) => u.email).filter(Boolean);
           if (userEmails.length > 0) {
@@ -176,6 +180,7 @@ export default function Admin({ webName }: { webName: string }) {
         setNewTeamB("");
         setNewLogoB("");
         setNewDeadline("");
+        setNewTotalPrize("50000");
         setMessage({ type: "success", text: "Match created successfully!" });
       } else {
         throw new Error();
@@ -477,14 +482,18 @@ export default function Admin({ webName }: { webName: string }) {
                       <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
                         Total Prize
                       </label>
-                      <input
-                        type="number"
-                        value={newTotalPrize}
-                        onChange={(e) =>
-                          setNewTotalPrize(Number(e.target.value))
-                        }
-                        className="w-full bg-zinc-800 border border-white/5 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                      />
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-zinc-400">Rp</span>
+                        <input
+                          type="text"
+                          value={newTotalPrize === "" ? "" : Number(newTotalPrize).toLocaleString("id-ID")}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, "");
+                            setNewTotalPrize(val === "" ? "" : val.replace(/^0+/, "") || "0");
+                          }}
+                          className="w-full bg-zinc-800 border border-white/5 rounded-xl pl-12 pr-4 py-3 text-white font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        />
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
