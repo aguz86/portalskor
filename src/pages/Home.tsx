@@ -55,12 +55,12 @@ export default function Home({ user, webName }: HomeProps) {
 
     const predictionsSub = supabase
       .channel('predictions_home')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'predictions', filter: `userId=eq.${user.uid}` }, fetchPredictions)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'predictions', filter: `userid=eq.${user.uid}` }, fetchPredictions)
       .subscribe();
 
     const withdrawalsSub = supabase
       .channel('withdrawals_home')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'withdrawals', filter: `userId=eq.${user.uid}` }, fetchWithdrawals)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'withdrawals', filter: `userid=eq.${user.uid}` }, fetchWithdrawals)
       .subscribe();
 
     return () => {
@@ -243,7 +243,7 @@ export default function Home({ user, webName }: HomeProps) {
                       {match.logoA ? (
                         <img src={match.logoA} alt={match.teamA} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       ) : (
-                        <span className="text-2xl font-black text-zinc-400">{match.teamA[0]}</span>
+                        <span className="text-2xl font-black text-zinc-400">{match.teamA?.[0] || '?'}</span>
                       )}
                     </div>
                     <p className="text-sm font-bold text-white truncate">{match.teamA}</p>
@@ -256,7 +256,7 @@ export default function Home({ user, webName }: HomeProps) {
                       {match.logoB ? (
                         <img src={match.logoB} alt={match.teamB} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       ) : (
-                        <span className="text-2xl font-black text-zinc-400">{match.teamB[0]}</span>
+                        <span className="text-2xl font-black text-zinc-400">{match.teamB?.[0] || '?'}</span>
                       )}
                     </div>
                     <p className="text-sm font-bold text-white truncate">{match.teamB}</p>
@@ -350,6 +350,7 @@ export default function Home({ user, webName }: HomeProps) {
                     <input
                       type="text"
                       value={withdrawAmountStr}
+                      disabled={user.balance === 0}
                       onChange={(e) => {
                         let val = e.target.value.replace(/\D/g, '');
                         if (!val) {
@@ -361,7 +362,7 @@ export default function Home({ user, webName }: HomeProps) {
                         const formatted = val.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
                         setWithdrawAmountStr(formatted);
                       }}
-                      className="w-full bg-zinc-800 border border-white/5 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                      className="w-full bg-zinc-800 border border-white/5 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder="0"
                     />
                   </div>
@@ -370,6 +371,7 @@ export default function Home({ user, webName }: HomeProps) {
                     <input
                       type="text"
                       value={withdrawWallet}
+                      disabled={user.balance === 0}
                       onChange={(e) => {
                         let val = e.target.value.toUpperCase();
                         if (val && !val.startsWith('J')) {
@@ -379,7 +381,7 @@ export default function Home({ user, webName }: HomeProps) {
                         }
                         setWithdrawWallet(val.slice(0, 6)); // J + 5 digits
                       }}
-                      className="w-full bg-zinc-800 border border-white/5 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all tracking-[0.2em]"
+                      className="w-full bg-zinc-800 border border-white/5 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all tracking-[0.2em] disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder="J12345"
                       maxLength={6}
                     />
@@ -489,7 +491,7 @@ export default function Home({ user, webName }: HomeProps) {
                       {predictingMatch.logoA ? (
                         <img src={predictingMatch.logoA} alt={predictingMatch.teamA} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       ) : (
-                        <span className="text-3xl font-black text-zinc-500">{predictingMatch.teamA[0]}</span>
+                        <span className="text-3xl font-black text-zinc-500">{predictingMatch.teamA?.[0] || '?'}</span>
                       )}
                     </div>
                     <p className="text-xs font-black uppercase tracking-widest text-zinc-500">{predictingMatch.teamA}</p>
@@ -506,7 +508,7 @@ export default function Home({ user, webName }: HomeProps) {
                       {predictingMatch.logoB ? (
                         <img src={predictingMatch.logoB} alt={predictingMatch.teamB} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       ) : (
-                        <span className="text-3xl font-black text-zinc-500">{predictingMatch.teamB[0]}</span>
+                        <span className="text-3xl font-black text-zinc-500">{predictingMatch.teamB?.[0] || '?'}</span>
                       )}
                     </div>
                     <p className="text-xs font-black uppercase tracking-widest text-zinc-500">{predictingMatch.teamB}</p>

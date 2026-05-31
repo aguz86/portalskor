@@ -1,13 +1,5 @@
--- Drop existing tables to allow fresh installation
-drop table if exists settings cascade;
-drop table if exists withdrawals cascade;
-drop table if exists predictions cascade;
-drop table if exists matches cascade;
-drop table if exists users cascade;
-drop table if exists otps cascade;
-
--- Users Table
-create table users (
+-- 1. Create Tables
+create table if not exists users (
   uid text primary key,
   username text not null,
   email text not null,
@@ -16,8 +8,7 @@ create table users (
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- Matches Table
-create table matches (
+create table if not exists matches (
   id uuid default gen_random_uuid() primary key,
   teama text not null,
   logoa text,
@@ -29,12 +20,11 @@ create table matches (
   deadline timestamp with time zone not null,
   totalprize bigint default 50000,
   winnercount int default 1,
-  prizedistribution text check (prizedistribution in ('rata', 'proporsional')) default 'rata',
+  prizedistribution text default 'rata',
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- Predictions Table
-create table predictions (
+create table if not exists predictions (
   id uuid default gen_random_uuid() primary key,
   userid text references users(uid),
   matchid uuid references matches(id),
@@ -44,8 +34,7 @@ create table predictions (
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- Withdrawals Table
-create table withdrawals (
+create table if not exists withdrawals (
   id uuid default gen_random_uuid() primary key,
   userid text references users(uid),
   amount bigint not null,
@@ -54,18 +43,7 @@ create table withdrawals (
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- OTPs Table
-create table otps (
-  id uuid default gen_random_uuid() primary key,
-  email text not null,
-  code text not null,
-  expires_at timestamp with time zone not null,
-  used boolean default false,
-  created_at timestamp with time zone default timezone('utc'::text, now())
-);
-
--- Settings Table
-create table settings (
+create table if not exists settings (
   id text primary key default 'config',
   webname text not null,
   adminemail text not null,
@@ -81,50 +59,67 @@ create table settings (
   installedat timestamp with time zone default timezone('utc'::text, now())
 );
 
--- RLS POLICIES
+-- Ensure table alters for upgrades
+alter table matches add column if not exists prizedistribution text default 'rata';
+alter table settings add column if not exists banner_image_url text;
+alter table settings add column if not exists banner_link_url text;
 
--- Enable RLS
+-- 2. Enable RLS
 alter table users enable row level security;
 alter table matches enable row level security;
 alter table predictions enable row level security;
 alter table withdrawals enable row level security;
-alter table otps enable row level security;
 alter table settings enable row level security;
 
--- Users Policies
+-- 3. Create Policies
+drop policy if exists "Public profiles are viewable by everyone." on users;
 create policy "Public profiles are viewable by everyone." on users for select using (true);
+
+drop policy if exists "Users can update own profile." on users;
 create policy "Users can update own profile." on users for update using (auth.uid()::text = uid);
+
+drop policy if exists "Users can insert own profile." on users;
 create policy "Users can insert own profile." on users for insert with check (auth.uid()::text = uid);
 
--- Matches Policies
+drop policy if exists "Matches are viewable by everyone." on matches;
 create policy "Matches are viewable by everyone." on matches for select using (true);
+
+drop policy if exists "Admins can manage matches." on matches;
 create policy "Admins can manage matches." on matches for all using (
   exists (select 1 from users where uid = auth.uid()::text and role = 'admin')
 );
 
--- Predictions Policies
-create policy "Users can view own predictions." on predictions for select using (auth.uid()::text = userId);
-create policy "Users can insert own predictions." on predictions for insert with check (auth.uid()::text = userId);
+drop policy if exists "Users can view own predictions." on predictions;
+create policy "Users can view own predictions." on predictions for select using (auth.uid()::text = userid);
+
+drop policy if exists "Users can insert own predictions." on predictions;
+create policy "Users can insert own predictions." on predictions for insert with check (auth.uid()::text = userid);
+
+drop policy if exists "Admins can view all predictions." on predictions;
 create policy "Admins can view all predictions." on predictions for select using (
   exists (select 1 from users where uid = auth.uid()::text and role = 'admin')
 );
+
+drop policy if exists "Admins can update predictions." on predictions;
 create policy "Admins can update predictions." on predictions for update using (
   exists (select 1 from users where uid = auth.uid()::text and role = 'admin')
 );
 
--- Withdrawals Policies
-create policy "Users can view own withdrawals." on withdrawals for select using (auth.uid()::text = userId);
-create policy "Users can insert own withdrawals." on withdrawals for insert with check (auth.uid()::text = userId);
+drop policy if exists "Users can view own withdrawals." on withdrawals;
+create policy "Users can view own withdrawals." on withdrawals for select using (auth.uid()::text = userid);
+
+drop policy if exists "Users can insert own withdrawals." on withdrawals;
+create policy "Users can insert own withdrawals." on withdrawals for insert with check (auth.uid()::text = userid);
+
+drop policy if exists "Admins can manage withdrawals." on withdrawals;
 create policy "Admins can manage withdrawals." on withdrawals for all using (
   exists (select 1 from users where uid = auth.uid()::text and role = 'admin')
 );
 
--- OTPs Policies
-create policy "OTPs are viewable and manageable by everyone." on otps for all using (true);
-
--- Settings Policies
+drop policy if exists "Settings are viewable by everyone." on settings;
 create policy "Settings are viewable by everyone." on settings for select using (true);
+
+drop policy if exists "Admins can manage settings." on settings;
 create policy "Admins can manage settings." on settings for all using (
   exists (select 1 from users where uid = auth.uid()::text and role = 'admin')
 );
-create policy "Anyone can insert settings." on settings for insert with check (true);

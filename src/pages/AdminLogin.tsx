@@ -86,7 +86,7 @@ export default function AdminLogin({ webName, logoUrl }: { webName: string, logo
         <div className="text-center space-y-6">
           <div className="flex justify-center">
             <Link 
-              to="/login" 
+              to="/user/login" 
               className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-all text-xs font-black uppercase tracking-[0.2em] rounded-2xl border border-white/5 shadow-lg active:scale-95"
             >
               <ChevronLeft className="w-4 h-4" /> Kembali ke User Login
@@ -182,7 +182,7 @@ export default function AdminLogin({ webName, logoUrl }: { webName: string, logo
 
           <div className="mt-6 text-center">
             <Link 
-              to="/forgot-password" 
+              to="/admin/forgot-password" 
               className="text-xs font-bold text-blue-500 hover:text-blue-400 uppercase tracking-widest transition-colors"
             >
               Lupa Password Admin?

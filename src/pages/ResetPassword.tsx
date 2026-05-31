@@ -4,7 +4,7 @@ import { Lock, ArrowRight, AlertCircle, CheckCircle2, ShieldCheck } from 'lucide
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 
-export default function ResetPassword({ webName = '', logoUrl }: { webName?: string, logoUrl?: string }) {
+export default function ResetPassword({ webName = '', logoUrl, role = 'user' }: { webName?: string, logoUrl?: string, role?: 'user' | 'admin' }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,7 +43,7 @@ export default function ResetPassword({ webName = '', logoUrl }: { webName?: str
 
       setMessage('Password berhasil diperbarui! Mengalihkan ke login...');
       setTimeout(() => {
-        navigate('/login');
+        navigate(role === 'admin' ? '/admin/login' : '/user/login');
       }, 3000);
     } catch (err: any) {
       console.error('Reset password update error:', err);

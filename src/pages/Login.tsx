@@ -5,10 +5,10 @@ import { Trophy, Globe, ShieldCheck, Mail, Lock, User, ArrowRight } from 'lucide
 import { motion, AnimatePresence } from 'motion/react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
-export default function Login({ webName, logoUrl }: { webName: string, logoUrl?: string }) {
+export default function Login({ webName, logoUrl, isRegisterRoute }: { webName: string, logoUrl?: string, isRegisterRoute?: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isRegistering, setIsRegistering] = useState(false);
+  const isRegistering = isRegisterRoute || false;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
@@ -25,10 +25,7 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
       // Force sign out just in case Supabase auto-logged them in
       supabase.auth.signOut().catch(() => {});
       // Clean up URL without triggering reload
-      window.history.replaceState({}, '', '/login');
-    }
-    if (params.get('register') === 'true') {
-      setIsRegistering(true);
+      window.history.replaceState({}, '', '/user/login');
     }
 
     // Check hash for Supabase error (like expired token)
@@ -38,7 +35,7 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
       if (hashParams.get('error')) {
         const errorDesc = hashParams.get('error_description');
         setError(errorDesc ? decodeURIComponent(errorDesc).replace(/\+/g, ' ') : 'Terjadi kesalahan autentikasi.');
-        window.history.replaceState({}, '', '/login');
+        window.history.replaceState({}, '', '/user/login');
       }
     }
   }, [location]);
@@ -71,7 +68,7 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
           password,
           options: {
             data: { username },
-            emailRedirectTo: 'https://portalskor.net/login?verified=true'
+            emailRedirectTo: 'https://portalskor.net/user/login?verified=true'
           }
         });
 
@@ -110,7 +107,7 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
         if (signInError) throw signInError;
       }
       
-      window.location.href = '/user';
+      window.location.href = '/user/dashboard';
     } catch (err: any) {
       console.error('Auth error:', err);
       if (err.code === '23505') setError('Email sudah terdaftar');
@@ -144,18 +141,18 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
           {!logoUrl && <span className="font-bold text-xl tracking-tight text-white">{webName}</span>}
         </a>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsRegistering(false)}
+          <Link
+            to="/user/login"
             className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${!isRegistering ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white'}`}
           >
             Masuk
-          </button>
-          <button
-            onClick={() => setIsRegistering(true)}
+          </Link>
+          <Link
+            to="/user/register"
             className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${isRegistering ? 'bg-emerald-500 text-zinc-950' : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20'}`}
           >
             Daftar
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -193,9 +190,9 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
             </div>
           </div>
 
-          <button
+          <Link
+            to="/user/login"
             onClick={() => {
-              setIsRegistering(false);
               setShowRegistrationSuccess(false);
               setUsername('');
               setPassword('');
@@ -204,7 +201,7 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
             className="w-full py-4 bg-emerald-500 text-zinc-950 font-black rounded-2xl hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
           >
             Kembali ke Login
-          </button>
+          </Link>
         </motion.div>
       ) : (
       <motion.div
@@ -338,15 +335,15 @@ export default function Login({ webName, logoUrl }: { webName: string, logoUrl?:
 
             <div className="mt-8 pt-8 border-t border-white/5 text-center space-y-6">
               <div className="flex flex-col gap-4">
-                <button
-                  onClick={() => setIsRegistering(!isRegistering)}
-                  className="w-full py-3 px-4 bg-zinc-800/50 hover:bg-zinc-800 text-sm font-bold text-zinc-300 hover:text-white rounded-xl transition-all border border-white/5 active:scale-[0.98]"
+                <Link
+                  to={isRegistering ? "/user/login" : "/user/register"}
+                  className="block w-full py-3 px-4 bg-zinc-800/50 hover:bg-zinc-800 text-sm font-bold text-zinc-300 hover:text-white rounded-xl transition-all border border-white/5 active:scale-[0.98]"
                 >
                   {isRegistering ? 'Sudah punya akun? Masuk Sekarang' : 'Belum punya akun? Daftar Gratis'}
-                </button>
+                </Link>
                 
                 <Link 
-                  to="/forgot-password" 
+                  to="/user/forgot-password" 
                   className="inline-block py-2 text-sm font-bold text-emerald-500 hover:text-emerald-400 transition-colors"
                 >
                   Lupa Password?

@@ -4,7 +4,7 @@ import { Mail, ArrowRight, AlertCircle, CheckCircle2, ChevronLeft } from 'lucide
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 
-export default function ForgotPassword({ webName = '', logoUrl }: { webName?: string, logoUrl?: string }) {
+export default function ForgotPassword({ webName = '', logoUrl, role = 'user' }: { webName?: string, logoUrl?: string, role?: 'user' | 'admin' }) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -18,7 +18,7 @@ export default function ForgotPassword({ webName = '', logoUrl }: { webName?: st
 
     try {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://portalskor.net/reset-password',
+        redirectTo: `https://portalskor.net/${role}/reset-password`,
       });
 
       if (resetError) throw resetError;
@@ -42,7 +42,7 @@ export default function ForgotPassword({ webName = '', logoUrl }: { webName?: st
         <div className="text-center space-y-6">
           <div className="flex justify-center">
             <Link 
-              to="/login" 
+              to={role === 'admin' ? '/admin/login' : '/user/login'}
               className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-all text-xs font-black uppercase tracking-[0.2em] rounded-2xl border border-white/5 shadow-lg active:scale-95"
             >
               <ChevronLeft className="w-4 h-4" /> Kembali ke Login

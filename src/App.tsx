@@ -64,16 +64,18 @@ export default function App() {
           const data = payload.new as any;
           setWebName(data.webname || 'Portal Skor');
           setAdminEmail(data.adminemail || '');
-          setAppConfig({
-            ...appConfig,
+          setAppConfig((prev: any) => ({
+            ...prev,
             webName: data.webname,
             adminEmail: data.adminemail,
             logoUrl: data.logo_url,
             facebookUrl: data.facebook_url,
             youtubeUrl: data.youtube_url,
             instagramUrl: data.instagram_url,
-            tiktokUrl: data.tiktok_url
-          });
+            tiktokUrl: data.tiktok_url,
+            bannerImageUrl: data.banner_image_url,
+            bannerLinkUrl: data.banner_link_url
+          }));
         })
         .subscribe();
 
@@ -198,7 +200,7 @@ export default function App() {
                     {!appConfig?.logoUrl && <span className="font-bold text-xl tracking-tight">{webName}</span>}
                   </a>
                   <div className="hidden md:flex items-center gap-6">
-                    <Link to="/user" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Home</Link>
+                    <Link to="/user/dashboard" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Home</Link>
                     {user.role === 'admin' && (
                       <Link to="/admin" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors flex items-center gap-1.5">
                         <Shield className="w-4 h-4" /> Admin
@@ -232,11 +234,14 @@ export default function App() {
 
         <Routes>
           <Route path="/" element={<Landing webName={webName} logoUrl={appConfig?.logoUrl} appConfig={appConfig} user={user} />} />
-          <Route path="/login" element={!user ? <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><Login webName={webName} logoUrl={appConfig?.logoUrl} /></main> : <Navigate to={user.role === 'admin' ? "/admin" : "/user"} />} />
-          <Route path="/admin/login" element={!user ? <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><AdminLogin webName={webName} logoUrl={appConfig?.logoUrl} /></main> : (user.role === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/user" />)} />
-          <Route path="/forgot-password" element={<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><ForgotPassword webName={webName} logoUrl={appConfig?.logoUrl} /></main>} />
-          <Route path="/reset-password" element={<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><ResetPassword webName={webName} logoUrl={appConfig?.logoUrl} /></main>} />
-          <Route path="/user" element={user && (!user.role || user.role === 'user') ? <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><Home user={user} webName={webName} /></main> : <Navigate to={user?.role === 'admin' ? "/admin" : "/login"} />} />
+          <Route path="/user/login" element={!user ? <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><Login webName={webName} logoUrl={appConfig?.logoUrl} isRegisterRoute={false} /></main> : <Navigate to={user.role === 'admin' ? "/admin" : "/user/dashboard"} />} />
+          <Route path="/user/register" element={!user ? <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><Login webName={webName} logoUrl={appConfig?.logoUrl} isRegisterRoute={true} /></main> : <Navigate to={user.role === 'admin' ? "/admin" : "/user/dashboard"} />} />
+          <Route path="/admin/login" element={!user ? <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><AdminLogin webName={webName} logoUrl={appConfig?.logoUrl} /></main> : (user.role === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/user/dashboard" />)} />
+          <Route path="/user/forgot-password" element={<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><ForgotPassword webName={webName} logoUrl={appConfig?.logoUrl} role="user" /></main>} />
+          <Route path="/user/reset-password" element={<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><ResetPassword webName={webName} logoUrl={appConfig?.logoUrl} role="user" /></main>} />
+          <Route path="/admin/forgot-password" element={<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><ForgotPassword webName={webName} logoUrl={appConfig?.logoUrl} role="admin" /></main>} />
+          <Route path="/admin/reset-password" element={<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><ResetPassword webName={webName} logoUrl={appConfig?.logoUrl} role="admin" /></main>} />
+          <Route path="/user/dashboard" element={user && (!user.role || user.role === 'user') ? <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><Home user={user} webName={webName} /></main> : <Navigate to={user?.role === 'admin' ? "/admin" : "/user/login"} />} />
           <Route path="/admin" element={user?.role === 'admin' ? <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><Admin webName={webName} /></main> : <Navigate to="/admin/login" />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

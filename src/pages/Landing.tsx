@@ -91,13 +91,13 @@ export default function Landing({ webName, logoUrl, appConfig, user }: LandingPr
               
               <div className="flex items-center gap-4">
                 <Link
-                  to="/login"
+                  to="/user/login"
                   className="px-5 py-2 text-sm text-zinc-300 font-bold hover:text-white transition-colors flex items-center gap-2"
                 >
                   <LogIn className="w-4 h-4" /> Masuk
                 </Link>
                 <Link
-                  to="/login?register=true"
+                  to="/user/register"
                   className="px-5 py-2 text-sm bg-emerald-500 text-zinc-950 font-black rounded-xl hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2"
                 >
                   <UserPlus className="w-4 h-4" /> Daftar
