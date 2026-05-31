@@ -5,18 +5,17 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-k
 
 function getStorage() {
   try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      // Test if we can actually use it (throws SecurityError in blocked iframes)
-      window.localStorage.setItem('__storage_test__', '1');
-      window.localStorage.removeItem('__storage_test__');
-      return window.localStorage;
+    if (typeof window !== 'undefined') {
+      const ls = window.localStorage;
+      ls.setItem('__storage_test__', '1');
+      ls.removeItem('__storage_test__');
+      return ls;
     }
   } catch (e) {
-    console.warn('localStorage is not available, falling back to in-memory storage', e);
+    console.warn('localStorage is not available, falling back to in-memory storage');
   }
 
   const memoryStorage = new Map<string, string>();
-  
   return {
     getItem: (key: string) => memoryStorage.get(key) || null,
     setItem: (key: string, value: string) => memoryStorage.set(key, value),

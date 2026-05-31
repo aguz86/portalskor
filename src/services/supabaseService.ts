@@ -427,10 +427,10 @@ export const supabaseService = {
     if (error) {
       console.error('Error saving config to Supabase:', error);
       let errorMessage = error.message;
-      if (errorMessage?.includes('Failed to fetch')) {
-        throw new Error('Supabase Error: Gagal terhubung ke database. Pastikan VITE_SUPABASE_URL sudah diisi dengan benar (menggunakan url https://...) dan Anda telah menjalankan script database.sql di Supabase SQL Editor.');
+      if (errorMessage?.includes('Failed to fetch') || errorMessage?.includes('SecurityError')) {
+        throw new Error('Supabase Error: Gagal terhubung ke database atau permintaan ditolak. Pastikan VITE_SUPABASE_URL valid (menggunakan https://...) dan Anda telah menjalankan script database. Jika Anda menggunakan Safari atau melihat ini di iframe, coba buka aplikasi di tab baru (Open in New Tab).');
       }
-      throw new Error(`Supabase Error: ${errorMessage} (${error.code})`);
+      throw new Error(`Supabase Error: ${errorMessage} (${error?.code || 'Unknown'})`);
     }
     return true;
   },
