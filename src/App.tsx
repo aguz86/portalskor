@@ -66,6 +66,10 @@ export default function App() {
           }
         } catch (error) {
           console.error("Supabase config fetch error:", error);
+          // If we got here, it's likely an RLS error or network error, NOT that it's uninstalled.
+          // We should assume it's installed to prevent breaking the app on reload for Admins.
+          setIsInstalled(true);
+          return;
         }
       }
 

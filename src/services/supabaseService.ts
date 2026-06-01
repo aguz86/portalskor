@@ -386,7 +386,8 @@ export const supabaseService = {
     if (error) {
       if (error.code === 'PGRST116') return null; // Not found
       console.error('Error fetching config from Supabase:', error);
-      return null;
+      // For any other error (like RLS or timeout), we throw it so the caller knows it's not a missing config
+      throw error;
     }
     return {
       id: data.id,
