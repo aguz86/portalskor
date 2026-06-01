@@ -59,7 +59,8 @@ export default function AdminLogin({ webName, logoUrl }: { webName: string, logo
         }
 
         if (userProfile && userProfile.role === 'admin') {
-          // Let App.tsx onAuthStateChange handle the redirect to avoid race conditions
+          // Force page reload to ensure auth state is cleanly picked up
+          window.location.href = '/admin';
           return;
         } else {
           await supabase.auth.signOut();

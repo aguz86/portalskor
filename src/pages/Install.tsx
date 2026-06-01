@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { supabaseService } from '../services/supabaseService';
 import { Shield, Layout, Mail, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
+import { supabase } from '../supabase';
 
 export default function Install({ onComplete }: { onComplete: () => void }) {
   const [webName, setWebName] = useState('');
@@ -48,7 +49,7 @@ export default function Install({ onComplete }: { onComplete: () => void }) {
 
       // 2. Create Admin Auth User
       // We use signUp. If the user already exists, it might return an error depending on Supabase settings.
-      const { data: authData, error: authError } = await (await import('../supabase')).supabase.auth.signUp({
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: adminEmail,
         password: adminPassword,
         options: {
@@ -74,7 +75,7 @@ export default function Install({ onComplete }: { onComplete: () => void }) {
       // But usually, the first install is a clean slate.
       
       if (authData?.user) {
-        const { error: profileError } = await (await import('../supabase')).supabase
+        const { error: profileError } = await supabase
           .from('users')
           .upsert([{
             uid: authData.user.id,

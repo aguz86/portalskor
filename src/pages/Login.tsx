@@ -100,15 +100,22 @@ export default function Login({ webName, logoUrl, isRegisterRoute }: { webName: 
         setShowRegistrationSuccess(true);
         return; // Don't reload, show success screen
       } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password
         });
         if (signInError) throw signInError;
+        
+        if (data.user) {
+          const profile = await supabaseService.getUserProfile(data.user.id);
+          if (profile?.role === 'admin') {
+            window.location.href = '/admin';
+          } else {
+            window.location.href = '/user/dashboard';
+          }
+          return;
+        }
       }
-      
-      // Let App.tsx onAuthStateChange handle the redirect to avoid race conditions
-      return;
     } catch (err: any) {
       console.error('Auth error:', err);
       if (err.code === '23505') setError('Email sudah terdaftar');
