@@ -58,7 +58,7 @@ export default function App() {
         try {
           const config = await supabaseService.getConfig();
           if (config) {
-            setIsInstalled(true);
+            setIsInstalled(config.isInstalled ?? true);
             setWebName(config.webName || "Portal Skor");
             setAdminEmail(config.adminEmail || "");
             setAppConfig(config);
@@ -69,6 +69,8 @@ export default function App() {
           // If we got here, it's likely an RLS error or network error, NOT that it's uninstalled.
           // We should assume it's installed to prevent breaking the app on reload for Admins.
           setIsInstalled(true);
+          setWebName("Portal Skor");
+          setAdminEmail("agustwn999@gmail.com"); // Fallback admin email to prevent role creation bug
           return;
         }
       }
@@ -151,7 +153,7 @@ export default function App() {
                 const config = await supabaseService.getConfig();
                 const adminEmail = config?.adminEmail || "";
                 const role =
-                  session.user.email === adminEmail ? "admin" : "user";
+                  session.user.email?.toLowerCase() === adminEmail.toLowerCase() ? "admin" : "user";
                 const username = (
                   session.user.user_metadata?.username ||
                   session.user.email?.split("@")[0] ||
@@ -230,22 +232,24 @@ export default function App() {
       return <Install onComplete={() => (window.location.href = "/")} />;
     }
 
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950 p-4 font-sans text-center">
-        <div className="max-w-md w-full bg-zinc-900 border border-white/10 rounded-[40px] p-8 shadow-2xl space-y-6">
-          <div className="p-4 bg-amber-500/10 rounded-2xl w-fit mx-auto">
-            <Lock className="w-10 h-10 text-amber-500" />
+    if (!window.location.pathname.startsWith("/admin")) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-zinc-950 p-4 font-sans text-center">
+          <div className="max-w-md w-full bg-zinc-900 border border-white/10 rounded-[40px] p-8 shadow-2xl space-y-6">
+            <div className="p-4 bg-amber-500/10 rounded-2xl w-fit mx-auto">
+              <Lock className="w-10 h-10 text-amber-500" />
+            </div>
+            <h1 className="text-2xl font-black text-white">
+              Website Sedang Diperbaiki
+            </h1>
+            <p className="text-zinc-400 text-sm">
+              Sistem kami saat ini sedang dalam pemeliharaan. Silakan kembali lagi
+              nanti.
+            </p>
           </div>
-          <h1 className="text-2xl font-black text-white">
-            Website Sedang Diperbaiki
-          </h1>
-          <p className="text-zinc-400 text-sm">
-            Sistem kami saat ini sedang dalam pemeliharaan. Silakan kembali lagi
-            nanti.
-          </p>
         </div>
-      </div>
-    );
+      );
+    }
   }
 
   return (

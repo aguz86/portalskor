@@ -42,7 +42,7 @@ export default function AdminLogin({ webName, logoUrl }: { webName: string, logo
         let userProfile = await supabaseService.getUserProfile(data.user.id);
 
         // If profile doesn't exist but email matches adminEmail, create it
-        if (!userProfile && data.user.email === adminEmail) {
+        if (!userProfile && data.user.email?.toLowerCase() === adminEmail.toLowerCase()) {
           const { error: profileError } = await supabase
             .from('users')
             .insert([{
@@ -59,7 +59,6 @@ export default function AdminLogin({ webName, logoUrl }: { webName: string, logo
         }
 
         if (userProfile && userProfile.role === 'admin') {
-          // Force page reload to ensure auth state is cleanly picked up
           window.location.href = '/admin';
           return;
         } else {

@@ -108,6 +108,7 @@ export default function Login({ webName, logoUrl, isRegisterRoute }: { webName: 
         
         if (data.user) {
           const profile = await supabaseService.getUserProfile(data.user.id);
+          
           if (profile?.role === 'admin') {
             window.location.href = '/admin';
           } else {
