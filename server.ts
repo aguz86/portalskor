@@ -2,8 +2,9 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
-import { Resend } from "resend";
 import dotenv from "dotenv";
+import cron from "node-cron";
+import { getScheduleForDate } from "./src/data/schedule.js";
 
 dotenv.config();
 
@@ -16,38 +17,97 @@ async function startServer() {
 
   app.use(express.json());
 
-  // API Route: Send Email via Resend
-  app.post("/api/send-email", async (req, res) => {
-    const { to, bcc, subject, html } = req.body;
+  // Background Cron Job for Telegram Notification
+  cron.schedule('* * * * *', async () => {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
 
-    if (!process.env.RESEND_API_KEY) {
-      return res
-        .status(500)
-        .json({
-          error: "RESEND_API_KEY belum dikonfigurasi di environment variables.",
+    if (!botToken || !chatId || botToken === "MY_TELEGRAM_BOT_TOKEN" || chatId === "MY_TELEGRAM_CHAT_ID") {
+      return; // Skip if credentials are not configured
+    }
+
+    const now = new Date();
+    // Gunakan timezone Asia/Jakarta
+    const currentHhMm = now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', hour12: false }).replace('.', ':');
+
+    const currentScheduleData = getScheduleForDate(now);
+    const currentItem = currentScheduleData.find(item => item.start === currentHhMm);
+    
+    if (currentItem) {
+      try {
+        const typeStr = currentItem.isBreak ? "☕ JEDA" : "🚀 SESI FOKUS";
+        let message = `*SESI BARU DIMULAI*\n\n`;
+        message += `Tipe: ${typeStr}\n`;
+        message += `Aktivitas: *${currentItem.activity}*\n`;
+        message += `Waktu: ${currentItem.start} - ${currentItem.end}\n`;
+        message += `Durasi: ${currentItem.duration} menit\n\n`;
+        message += `_Catatan: ${currentItem.notes}_`;
+
+        const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: message,
+            parse_mode: "Markdown",
+          }),
         });
+
+        if (!response.ok) {
+          console.error(`Telegram API responded with ${response.status}`);
+        } else {
+          console.log(`Telegram notification sent for ${currentItem.activity} at ${currentHhMm}`);
+        }
+      } catch (error) {
+        console.error("Telegram cron notification error:", error);
+      }
+    }
+  }, {
+    timezone: "Asia/Jakarta"
+  });
+
+  // API Route for testing Telegram Notification or from frontend
+  app.post("/api/telegram", async (req, res) => {
+    const { activity, duration, isBreak, notes } = req.body;
+    
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+
+    if (!botToken || !chatId || botToken === "MY_TELEGRAM_BOT_TOKEN" || chatId === "MY_TELEGRAM_CHAT_ID") {
+      res.status(500).json({ error: "Telegram credentials not configured." });
+      return;
     }
 
     try {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      const emailPayload: any = {
-        from: "Portal Skor <noreply@portalskor.net>", // Pastikan domain portalskor.net sudah diverifikasi di dashboard Resend
-        to,
-        subject,
-        html,
-      };
+      const typeStr = isBreak ? "☕ JEDA" : "🚀 SESI FOKUS";
+      let message = `*SESI BARU DIMULAI*\n\n`;
+      message += `Tipe: ${typeStr}\n`;
+      message += `Aktivitas: *${activity}*\n`;
+      message += `Durasi: ${duration} menit\n\n`;
+      message += `_Catatan: ${notes}_`;
 
-      if (bcc) {
-        emailPayload.bcc = bcc;
+      const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: "Markdown",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Telegram API responded with ${response.status}`);
       }
 
-      const { data, error } = await resend.emails.send(emailPayload);
-
-      if (error) throw error;
-      res.json({ success: true, data });
-    } catch (err: any) {
-      console.error("Resend error:", err);
-      res.status(500).json({ error: err.message || "Gagal mengirim email" });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Telegram notification error:", error);
+      res.status(500).json({ error: "Failed to send message" });
     }
   });
 
@@ -59,10 +119,10 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), "dist");
+    const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 

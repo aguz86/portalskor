@@ -1,5 +1,6 @@
 {
-  "name": "Portal Skor",
-  "description": "Aplikasi tebak skor bola dengan fitur pendaftaran user, input skor, dan penarikan hadiah.",
-  "requestFramePermissions": []
+  "name": "GROW UP | Habit Changer",
+  "description": "A productivity tracker for personal development with a timeline schedule, week progress chart, and audio alarms for breaks.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
 }
