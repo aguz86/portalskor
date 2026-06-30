@@ -332,6 +332,7 @@ export function useSchedule() {
   }, [currentDateStr, user]);
 
   const getResolvedSchedule = (date: Date) => {
+      if (!user) return [];
       const dStr = format(date, 'yyyy-MM-dd');
       let base = getScheduleForDate(date);
       const dayOfWeek = date.getDay();
@@ -351,7 +352,7 @@ export function useSchedule() {
               return item;
           }).filter(Boolean) as ScheduleItem[];
           
-          Object.values(globalOverrides).forEach(override => {
+          Object.values(globalOverrides).forEach((override: any) => {
               if (override.isDeleted) return;
               if (!baseStartTimes.has(override.start)) {
                   if (!(override.excludedDays && override.excludedDays.includes(dayOfWeek))) {
@@ -380,11 +381,8 @@ export function useSchedule() {
           localStorage.setItem(`${customPrefix}${dateStr}`, JSON.stringify(nextSchedule));
 
           if (user) {
-              try {
-                  await setDoc(doc(db, 'users', user.uid, 'schedules', dateStr), { schedule: nextSchedule });
-              } catch(e) {
-                  console.error("Firebase save error", e);
-              }
+              setDoc(doc(db, 'users', user.uid, 'schedules', dateStr), { schedule: nextSchedule })
+                  .catch(e => console.error("Firebase save error", e));
           }
       } else {
           const baseSchedule = getScheduleForDate(parse(dateStr, 'yyyy-MM-dd', new Date()));
@@ -396,65 +394,66 @@ export function useSchedule() {
           localStorage.setItem(globalPrefix, JSON.stringify(newOverrides));
           
           if (user) {
-              try {
-                  await setDoc(doc(db, 'users', user.uid, 'settings', 'globalOverrides'), { items: newOverrides }, { merge: true });
-              } catch (e) {
-                  console.error("Firebase save error", e);
-              }
+              setDoc(doc(db, 'users', user.uid, 'settings', 'globalOverrides'), { items: newOverrides }, { merge: true })
+                  .catch(e => console.error("Firebase save error", e));
           }
           
-          setCustomSchedules(prev => {
-              const nextCustom = { ...prev };
-              if (!nextCustom[dateStr]) {
-                  nextCustom[dateStr] = nextSchedule;
+          const nextCustom = { ...customSchedules };
+          if (!nextCustom[dateStr]) {
+              nextCustom[dateStr] = nextSchedule;
+          }
+          
+          const updateDay = (dStr: string, scheduleArray: ScheduleItem[]) => {
+              const dateObj = parse(dStr, 'yyyy-MM-dd', new Date());
+              const dayOfWeek = dateObj.getDay();
+              let changed = false;
+              let shouldExclude = updatedItem.excludedDays && updatedItem.excludedDays.includes(dayOfWeek);
+
+              const updated = scheduleArray.map(item => {
+                  if (item.id === originalItem.id || item.start === baseStartTime) {
+                      changed = true;
+                      if (shouldExclude) {
+                          const baseScheduleForDay = getScheduleForDate(dateObj);
+                          const baseItemForDay = baseScheduleForDay.find(b => b.start === baseStartTime);
+                          return baseItemForDay ? baseItemForDay : null;
+                      }
+                      return { ...updatedItem, id: item.id };
+                  }
+                  return item;
+              }).filter(Boolean) as ScheduleItem[];
+              
+              if (!changed && !shouldExclude) {
+                  updated.push({ ...updatedItem, id: originalItem.id });
+                  changed = true;
               }
               
-              const updateDay = (dStr: string, scheduleArray: ScheduleItem[]) => {
-                  const dateObj = parse(dStr, 'yyyy-MM-dd', new Date());
-                  const dayOfWeek = dateObj.getDay();
-                  let changed = false;
-                  let shouldExclude = updatedItem.excludedDays && updatedItem.excludedDays.includes(dayOfWeek);
+              if (changed || dStr === dateStr) {
+                  updated.sort((a, b) => a.start.localeCompare(b.start));
+              }
+              return { updated, changed };
+          };
 
-                  const updated = scheduleArray.map(item => {
-                      if (item.id === originalItem.id || item.start === baseStartTime) {
-                          changed = true;
-                          if (shouldExclude) {
-                              const baseScheduleForDay = getScheduleForDate(dateObj);
-                              const baseItemForDay = baseScheduleForDay.find(b => b.start === baseStartTime);
-                              return baseItemForDay ? baseItemForDay : null;
-                          }
-                          return { ...updatedItem, id: item.id };
-                      }
-                      return item;
-                  }).filter(Boolean) as ScheduleItem[];
-                  
-                  if (!changed && !shouldExclude) {
-                      updated.push({ ...updatedItem, id: originalItem.id });
-                      changed = true;
-                  }
-                  
-                  if (changed || dStr === dateStr) {
-                      updated.sort((a, b) => a.start.localeCompare(b.start));
-                  }
-                  return { updated, changed };
-              };
+          const updatePromises: Promise<void>[] = [];
 
-              // First update all cached days, INCLUDING dateStr
-              Object.keys(nextCustom).forEach(dStr => {
-                  const scheduleToUpdate = dStr === dateStr ? nextSchedule : nextCustom[dStr];
-                  const res = updateDay(dStr, scheduleToUpdate);
-                  
-                  if (res.changed || dStr === dateStr) {
-                      nextCustom[dStr] = res.updated;
-                      localStorage.setItem(`${customPrefix}${dStr}`, JSON.stringify(nextCustom[dStr]));
-                      if (user) {
-                          setDoc(doc(db, 'users', user.uid, 'schedules', dStr), { schedule: nextCustom[dStr] }).catch(console.error);
-                      }
-                  }
-              });
+          // First update all cached days, INCLUDING dateStr
+          Object.keys(nextCustom).forEach(dStr => {
+              const scheduleToUpdate = dStr === dateStr ? nextSchedule : nextCustom[dStr];
+              const res = updateDay(dStr, scheduleToUpdate);
               
-              return nextCustom;
+              if (res.changed || dStr === dateStr) {
+                  nextCustom[dStr] = res.updated;
+                  localStorage.setItem(`${customPrefix}${dStr}`, JSON.stringify(nextCustom[dStr]));
+                  if (user) {
+                      updatePromises.push(setDoc(doc(db, 'users', user.uid, 'schedules', dStr), { schedule: nextCustom[dStr] }));
+                  }
+              }
           });
+          
+          setCustomSchedules(nextCustom);
+          
+          if (updatePromises.length > 0) {
+              Promise.all(updatePromises).catch(e => console.error("Firebase save error", e));
+          }
       }
   };
 
@@ -463,6 +462,18 @@ export function useSchedule() {
       const originalItem = current[index];
       const updatedItem = { ...originalItem, isDeleted: true };
       return updateScheduleItem(dateStr, index, updatedItem, applyMode);
+  };
+
+  const deleteAllScheduleItems = async (dateStr: string) => {
+      const customPrefix = user ? `custom_schedule_${user.uid}_` : 'custom_schedule_';
+      
+      setCustomSchedules(prev => ({ ...prev, [dateStr]: [] }));
+      localStorage.setItem(`${customPrefix}${dateStr}`, JSON.stringify([]));
+
+      if (user) {
+          setDoc(doc(db, 'users', user.uid, 'schedules', dateStr), { schedule: [] })
+              .catch(e => console.error("Firebase save error", e));
+      }
   };
 
   const addScheduleItem = async (dateStr: string, newItem: ScheduleItem) => {
@@ -478,11 +489,8 @@ export function useSchedule() {
       localStorage.setItem(`${customPrefix}${dateStr}`, JSON.stringify(nextSchedule));
 
       if (user) {
-          try {
-              await setDoc(doc(db, 'users', user.uid, 'schedules', dateStr), { schedule: nextSchedule });
-          } catch(e) {
-              console.error("Firebase save error", e);
-          }
+          setDoc(doc(db, 'users', user.uid, 'schedules', dateStr), { schedule: nextSchedule })
+              .catch(e => console.error("Firebase save error", e));
       }
   };
 
@@ -761,6 +769,7 @@ export function useSchedule() {
     getResolvedSchedule,
     updateScheduleItem,
     deleteScheduleItem,
+    deleteAllScheduleItems,
     addScheduleItem,
     loadScheduleForDate,
     user
